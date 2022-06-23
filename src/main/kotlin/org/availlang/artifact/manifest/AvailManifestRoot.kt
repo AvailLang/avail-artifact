@@ -13,7 +13,8 @@ import org.availlang.json.JSONWriter
  */
 data class AvailManifestRoot constructor(
 	val name: String,
-	val availModuleExtensions: List<String>
+	val availModuleExtensions: List<String>,
+	val entryPoints: List<String>
 ): JSONFriendly
 {
 	override fun writeTo(writer: JSONWriter)
@@ -26,6 +27,10 @@ data class AvailManifestRoot constructor(
 			at(AvailManifestRoot::availModuleExtensions.name)
 			{
 				writeStrings(availModuleExtensions)
+			}
+			at(AvailManifestRoot::entryPoints.name)
+			{
+				writeStrings(entryPoints)
 			}
 		}
 	}
@@ -67,7 +72,19 @@ data class AvailManifestRoot constructor(
 							"extensions.",
 						e)
 				}
-			return AvailManifestRoot(name, extensions)
+			val entryPoints =
+				try
+				{
+					obj.getArray(
+						AvailManifestRoot::entryPoints.name).strings
+				}
+				catch (e: Throwable)
+				{
+					throw AvailArtifactException(
+						"Problem extracting Avail Manifest Root entry points.",
+						e)
+				}
+			return AvailManifestRoot(name, extensions, entryPoints)
 		}
 	}
 }

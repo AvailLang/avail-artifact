@@ -10,7 +10,7 @@ import java.security.MessageDigest
  * @author Mark van Gulik &lt;mark@availlang.org&gt;
  * @author Richard Arriaga
  */
-object RootDigest
+object DigestUtility
 {
 	/**
 	 * Construct the contents of a single file that summarizes message digests

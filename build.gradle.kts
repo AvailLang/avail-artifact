@@ -12,14 +12,14 @@ plugins {
 }
 
 group = "org.availlang"
-version = "1.0.0-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
 }
 
 val targetJVM = 17
-val kotlinLanguage = 1.7
+val kotlinLanguage = 1.6
 
 java {
     toolchain {

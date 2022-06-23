@@ -1,7 +1,6 @@
 package org.availlang.artifact.jar
 
 import org.availlang.artifact.*
-import org.availlang.artifact.configuration.AvailApplicationConfiguration
 import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.json.jsonObject
 import java.io.BufferedInputStream
@@ -39,8 +38,6 @@ class AvailArtifactJar constructor(
 	private val jarFile: JarFile
 
 	override val manifest by lazy { extractManifest() }
-
-	override val configuration by lazy { extractConfiguration() }
 
 	init
 	{
@@ -111,36 +108,9 @@ class AvailArtifactJar constructor(
 		return AvailArtifactManifest.from(json)
 	}
 
-	override fun extractConfiguration(): AvailApplicationConfiguration?
-	{
-		if (manifest.artifactType != AvailArtifactType.APPLICATION)
-		{
-			return null
-		}
-		val rawConfig = extractFile(
-			AvailApplicationConfiguration.availApplicationConfigurationFile)
-		val text = String(rawConfig)
-		val json =
-			try
-			{
-				jsonObject(text)
-			}
-			catch (e: Throwable)
-			{
-				throw AvailArtifactException(
-					"Failure in parsing Avail Application Configuration, " +
-							AvailApplicationConfiguration
-								.availApplicationConfigurationFile +
-							" from the JAR file $uri",
-					e)
-			}
-		return AvailApplicationConfiguration.from(json)
-	}
-
 	override fun extractDigestForRoot(rootName: String): Map<String, ByteArray>
 	{
-		val digestPath = "${AvailArtifact.artifactRootDirectory}/$rootName/" +
-			AvailArtifact.availDigestsPathInArtifact
+		val digestPath = AvailArtifact.rootArtifactDigestFilePath(rootName)
 		val digestEntry = jarFile.getEntry(digestPath) ?:
 			throw AvailArtifactException(
 				"Could not locate digest, $digestPath, for root, $rootName")
@@ -149,7 +119,7 @@ class AvailArtifactJar constructor(
 			BufferedInputStream(
 				jarFile.getInputStream(digestEntry), 4096))
 		stream.readFully(bytes)
-		return RootDigest.parseDigest(String(bytes))
+		return DigestUtility.parseDigest(String(bytes))
 	}
 
 	override fun extractFileMetadataForRoot(
@@ -160,7 +130,7 @@ class AvailArtifactJar constructor(
 			manifest.roots[rootName]?.availModuleExtensions ?:
 				listOf(AvailRootFileMetadata.availExtension)
 		val digests = extractDigestForRoot(rootName)
-		val prefix = "${AvailArtifact.artifactRootDirectory}/$rootName/" +
+		val prefix = "${AvailArtifact.availSourcesPathInArtifact}/$rootName/" +
 			AvailArtifact.availSourcesPathInArtifact
 		val entries = jarFile.entries()
 		val metadata = mutableListOf<AvailRootFileMetadata>()

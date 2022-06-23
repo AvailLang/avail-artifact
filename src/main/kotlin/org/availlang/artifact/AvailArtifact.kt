@@ -1,6 +1,5 @@
 package org.availlang.artifact
 
-import org.availlang.artifact.configuration.AvailApplicationConfiguration
 import org.availlang.artifact.manifest.AvailArtifactManifest
 
 /**
@@ -21,12 +20,6 @@ interface AvailArtifact
 	val manifest: AvailArtifactManifest
 
 	/**
-	 * This [AvailArtifact]'s [AvailApplicationConfiguration] or `null` if not
-	 * an [AvailArtifactType.APPLICATION].
-	 */
-	val configuration: AvailApplicationConfiguration?
-
-	/**
 	 * @return
 	 *   Extract and return the [AvailArtifactManifest] from this
 	 *   [AvailArtifact].
@@ -35,17 +28,6 @@ interface AvailArtifact
 	 *   [AvailArtifactManifest].
 	 */
 	fun extractManifest (): AvailArtifactManifest
-
-	/**
-	 * @return
-	 *   Extract and return the [AvailApplicationConfiguration] from this
-	 *   [AvailArtifact] if this is an [AvailArtifactType.APPLICATION]; `null`
-	 *   otherwise.
-	 * @throws AvailArtifactException
-	 *   Should be thrown if there is trouble accessing the
-	 *   [AvailApplicationConfiguration].
-	 */
-	fun extractConfiguration (): AvailApplicationConfiguration?
 
 	/**
 	 * Extract the map of file digests keyed by the file name.
@@ -91,9 +73,57 @@ interface AvailArtifact
 		const val availSourcesPathInArtifact = "Avail-Sources/"
 
 		/**
+		 * The prefix of paths of Avail Module Root *source* file names within
+		 * the artifact.
+		 */
+		const val availDigestsPathInArtifact = "Avail-Digests/"
+
+		/**
+		 * The name of the root digests file.
+		 */
+		const val digestsFileName = "all_digests.txt"
+
+		/**
 		 * The path within this artifact of the digests file. The file contains
 		 * a series of entries of the form ```<path>:<digest>\n```.
 		 */
-		const val availDigestsPathInArtifact = "Avail-Digests/all_digests.txt"
+		const val availDigestsFilePathInArtifact =
+			"$availDigestsPathInArtifact/$digestsFileName"
+
+		/**
+		 * Create the base path for the directory where the Avail root sources
+		 * will be stored.
+		 *
+		 * @param rootName
+		 *   The name of the root to construct the path for.
+		 * @return
+		 *   The source files path in the artifact.
+		 */
+		fun rootArtifactSourcesDir (rootName: String) =
+			"${artifactRootDirectory}/$rootName/$availSourcesPathInArtifact"
+
+		/**
+		 * Create the path for the digests directory in the artifact for the
+		 * given root.
+		 *
+		 * @param rootName
+		 *   The name of the root to construct the path for.
+		 * @return
+		 *   The digests file path in the artifact.
+		 */
+		fun rootArtifactDigestDirPath (rootName: String) =
+			"${artifactRootDirectory}/$rootName"
+
+		/**
+		 * Create the file path for the digests file in the artifact for the
+		 * given root.
+		 *
+		 * @param rootName
+		 *   The name of the root to construct the path for.
+		 * @return
+		 *   The digests file path in the artifact.
+		 */
+		fun rootArtifactDigestFilePath (rootName: String) =
+			"${rootArtifactDigestDirPath(rootName)}/$availDigestsFilePathInArtifact"
 	}
 }
