@@ -175,7 +175,7 @@ class AvailArtifactJar constructor(
 			manifest.roots[rootName]?.availModuleExtensions ?:
 			listOf(AvailRootFileMetadata.availExtension)
 		val prefix = "${AvailArtifact.artifactRootDirectory}/$rootName/" +
-			AvailArtifact.availSourcesPathInArtifact
+			"${AvailArtifact.availSourcesPathInArtifact}/"
 		val metadata = mutableListOf<AvailRootFileMetadata>()
 		for (entry in entries)
 		{
@@ -203,7 +203,7 @@ class AvailArtifactJar constructor(
 			entryName = entryName.removeSuffix("/")
 			val qualifiedName = entryName
 				.split("/")
-				.joinToString("/", prefix = "/$rootName") {
+				.joinToString("/", prefix = "/$rootName/") {
 					it.removeSuffix(AvailRootFileMetadata.availExtension)
 				}
 			val mimeType = when (type)
