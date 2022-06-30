@@ -11,7 +11,7 @@ import java.util.*
 val formattedNow: String get()
 {
 	val formatter = DateTimeFormatter
-		.ofPattern("yyyy-MM-ddTHH:mm:ss.SSSZ")
+		.ofPattern("yyyy-MM-dd HH:mm:ss.SSSZ")
 		.withLocale(Locale.getDefault())
 		.withZone(ZoneId.of("UTC"))
 	return formatter.format(Instant.now())

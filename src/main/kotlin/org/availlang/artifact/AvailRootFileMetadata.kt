@@ -9,7 +9,7 @@ package org.availlang.artifact
  * @property path
  *   The relative path of the file inside the [AvailArtifact].
  * @property type
- *   The [AvailRootFileType] that identifies the type of the file.
+ *   The [ResourceType] that identifies the type of the file.
  * @property qualifiedName
  *   The fully-qualified name of the module or resource.
  * @property mimeType
@@ -24,13 +24,15 @@ package org.availlang.artifact
  */
 class AvailRootFileMetadata constructor(
 	val path: String,
-	val type: AvailRootFileType,
+	val type: ResourceType,
 	val qualifiedName: String,
 	val mimeType: String,
 	val lastModified: Long,
 	val size: Long,
 	val digest: ByteArray?)
 {
+
+	override fun toString(): String = "[${type.name}] $qualifiedName"
 
 	companion object
 	{

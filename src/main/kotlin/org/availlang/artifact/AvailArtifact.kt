@@ -20,6 +20,11 @@ interface AvailArtifact
 	val manifest: AvailArtifactManifest
 
 	/**
+	 * The [ArtifactDescriptor] that describes this [AvailArtifact].
+	 */
+	val artifactDescriptor: ArtifactDescriptor
+
+	/**
 	 * @return
 	 *   Extract and return the [AvailArtifactManifest] from this
 	 *   [AvailArtifact].
@@ -35,7 +40,7 @@ interface AvailArtifact
 	 * @param rootName
 	 *   The name of the root to extract digest map for.
 	 * @return
-	 *   The list of digest map.
+	 *   The digest map keyed by the file name to its associated digest bytes.
 	 * @throws AvailArtifactException
 	 *   Should be thrown if there is trouble extracting the digest.
 	 */
@@ -70,13 +75,13 @@ interface AvailArtifact
 		 * The prefix of paths of Avail Module Root *source* file names within
 		 * the artifact.
 		 */
-		const val availSourcesPathInArtifact = "Avail-Sources/"
+		const val availSourcesPathInArtifact = "Avail-Sources"
 
 		/**
 		 * The prefix of paths of Avail Module Root *source* file names within
 		 * the artifact.
 		 */
-		const val availDigestsPathInArtifact = "Avail-Digests/"
+		const val availDigestsPathInArtifact = "Avail-Digests"
 
 		/**
 		 * The name of the root digests file.

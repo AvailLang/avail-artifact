@@ -1,11 +1,11 @@
 package org.availlang.artifact.manifest
 
-import org.availlang.artifact.AvailArtifact
-import org.availlang.artifact.AvailArtifactException
-import org.availlang.artifact.AvailArtifactType
-import org.availlang.artifact.formattedNow
+import org.availlang.artifact.*
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
+import org.availlang.json.jsonPrettyPrintWriter
+import java.io.File
+import java.nio.charset.StandardCharsets
 
 /**
  * The interface that for the manifest that describes the contents of the
@@ -46,19 +46,60 @@ sealed interface AvailArtifactManifest: JSONFriendly
 	 */
 	val roots: Map<String, AvailManifestRoot>
 
+	/**
+	 * The String file contents of this [AvailArtifactManifest].
+	 */
+	val fileContent: String get() =
+		jsonPrettyPrintWriter {
+			this@AvailArtifactManifest.writeTo(this)
+		}.toString()
+
+	/**
+	 * Write this [AvailArtifactManifest] to the provided [File].
+	 *
+	 * @param targetFile
+	 *   The file to write to.
+	 */
+	fun writeFile (targetFile: File)
+	{
+		targetFile.writeText(fileContent)
+	}
+
 	companion object
 	{
 		/**
 		 * The version that represents the current structure under which Avail
 		 * libs are packaged in the artifact.
 		 */
-		private const val CURRENT_ARTIFACT_VERSION = 1
+		internal const val CURRENT_MANIFEST_VERSION = 1
+
+		/**
+		 * Check to see if the provided value is a valid ordinal for a variant
+		 * in [PackageType].
+		 *
+		 * @param proposedOrdinal
+		 *   The proposed ordinal to check.
+		 * @return
+		 *   `true` if the ordinal represents a valid variant of [PackageType];
+		 *   `false` otherwise.
+		 */
+		fun isValidVersion (proposedOrdinal: Int): Boolean =
+			proposedOrdinal in 0..CURRENT_MANIFEST_VERSION
+
+		/**
+		 * The name of the [AvailArtifactManifest] file. The file extension is
+		 * `txt` to indicate that this is a text file to ensure that it is
+		 * understood that the file is "human-readable". By not adhering to
+		 * a `.json` file extension, it allows the file format to evolve over
+		 * time.
+		 */
+		const val manifestFileName = "avail-artifact-manifest.txt"
 
 		/**
 		 * The path within this artifact of the [AvailArtifactManifest].
 		 */
 		const val availArtifactManifestFile =
-			"${AvailArtifact.artifactRootDirectory}/avail-artifact-manifest.json"
+			"${AvailArtifact.artifactRootDirectory}/$manifestFileName"
 
 		/**
 		 * Answer an [AvailArtifactManifest] from the provided [JSONObject].
@@ -90,9 +131,55 @@ sealed interface AvailArtifactManifest: JSONFriendly
 					throw AvailArtifactException("Invalid Avail Artifact: " +
 							"Version $version is not in the valid range of " +
 							"known artifact versions," +
-							" [1, $CURRENT_ARTIFACT_VERSION].")
+							" [1, $CURRENT_MANIFEST_VERSION].")
 			}
 		}
+
+		/**
+		 * Construct an [AvailArtifactManifest] and write it to the target file.
+		 *
+		 * @param artifactType
+		 *   The [AvailArtifactType] that represents the type of
+		 *   [AvailArtifact] that the [AvailArtifactManifest] represents.
+		 * @param targetFile
+		 *   The file to write to.
+		 * @param roots
+		 *   The map of the [AvailManifestRoot]s keyed by
+		 *   [AvailManifestRoot.name] that are present in the artifact.
+		 * @return
+		 *   The file byte contents.
+		 */
+		fun writeManifestFile (
+			artifactType: AvailArtifactType,
+			targetFile: File,
+			roots: Map<String, AvailManifestRoot>)
+		{
+			AvailArtifactManifestV1(
+				artifactType,
+				formattedNow,
+				roots).writeFile(targetFile)
+		}
+
+		/**
+		 * Answer the [availArtifactManifestFile] contents.
+		 *
+		 * @param artifactType
+		 *   The [AvailArtifactType] that represents the type of
+		 *   [AvailArtifact] that the [AvailArtifactManifest] represents.
+		 * @param roots
+		 *   The map of the [AvailManifestRoot]s keyed by
+		 *   [AvailManifestRoot.name] that are present in the artifact.
+		 * @return
+		 *   The file byte contents.
+		 */
+		fun createManifestFileContents (
+			artifactType: AvailArtifactType,
+			roots: Map<String, AvailManifestRoot>
+		): ByteArray =
+			AvailArtifactManifestV1(
+				artifactType,
+				formattedNow,
+				roots).fileContent.toByteArray(StandardCharsets.UTF_8)
 	}
 }
 

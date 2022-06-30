@@ -7,7 +7,9 @@ import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.net.URI
 import java.util.jar.JarFile
-import org.availlang.artifact.AvailRootFileType.*
+import org.availlang.artifact.ResourceType.*
+import java.util.*
+import java.util.jar.JarEntry
 
 /**
  * An [AvailArtifact] packaged as a [JarFile].
@@ -20,22 +22,33 @@ import org.availlang.artifact.AvailRootFileType.*
  * @constructor
  * Construct an [AvailArtifactJar].
  *
- * @param name
- *   The name of the jar file.
  * @param uri
  *   The [URI] to the jar file.
  * @throws AvailArtifactException
  *   If there is a problem accessing the [JarFile] at the given [URI].
  */
+@Suppress("unused")
 class AvailArtifactJar constructor(
-	override val name: String,
-	private val uri: URI,
+	private val uri: URI
 ): AvailArtifact
 {
 	/**
 	 * The [JarFile] that is the [AvailArtifactJar].
 	 */
 	private val jarFile: JarFile
+
+	override val artifactDescriptor: ArtifactDescriptor
+
+	/**
+	 * An enumeration of the jar file entries.
+	 *
+	 * @throws IllegalStateException
+	 *   If the jar file has been closed.
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	val jarFileEntries: Enumeration<JarEntry> get() = jarFile.entries()
+
+	override val name: String
 
 	override val manifest by lazy { extractManifest() }
 
@@ -44,6 +57,10 @@ class AvailArtifactJar constructor(
 		try
 		{
 			jarFile = JarFile(uri.path)
+			name = jarFile.name
+			artifactDescriptor =
+				ArtifactDescriptor.from(
+					extractFile(ArtifactDescriptor.artifactDescriptorFilePath))
 		}
 		catch (e: Throwable)
 		{
@@ -75,7 +92,8 @@ class AvailArtifactJar constructor(
 	 * @throws AvailArtifactException
 	 *   If the target file is not retrievable.
 	 */
-	private fun extractFile (filePath: String): ByteArray
+	@Suppress("MemberVisibilityCanBePrivate")
+	fun extractFile (filePath: String): ByteArray
 	{
 		val digestEntry = jarFile.getEntry(filePath) ?:
 			throw AvailArtifactException(
@@ -126,13 +144,38 @@ class AvailArtifactJar constructor(
 		rootName: String
 	): List<AvailRootFileMetadata>
 	{
+		val digests = extractDigestForRoot(rootName)
+		val entries = jarFile.entries()
+		return extractFileMetadataForRoot(rootName, entries, digests)
+	}
+
+	/**
+	 * Extract the list of [AvailRootFileMetadata] for all the files in the
+	 * Avail Root Module for the given root module name.
+	 *
+	 * @param rootName
+	 *   The name of the root to extract metadata for.
+	 * @param entries
+	 *   The [jarFile] [entries][JarFile.entries].
+	 * @param digests
+	 *   The digest map keyed by the file name to its associated digest bytes.
+	 * @return
+	 *   The list of extracted [AvailRootFileMetadata].
+	 * @throws AvailArtifactException
+	 *   Should be thrown if there is trouble accessing the roots files.
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	fun extractFileMetadataForRoot(
+		rootName: String,
+		entries: Enumeration<JarEntry>,
+		digests: Map<String, ByteArray>
+	): List<AvailRootFileMetadata>
+	{
 		val extensions =
 			manifest.roots[rootName]?.availModuleExtensions ?:
-				listOf(AvailRootFileMetadata.availExtension)
-		val digests = extractDigestForRoot(rootName)
-		val prefix = "${AvailArtifact.availSourcesPathInArtifact}/$rootName/" +
+			listOf(AvailRootFileMetadata.availExtension)
+		val prefix = "${AvailArtifact.artifactRootDirectory}/$rootName/" +
 			AvailArtifact.availSourcesPathInArtifact
-		val entries = jarFile.entries()
 		val metadata = mutableListOf<AvailRootFileMetadata>()
 		for (entry in entries)
 		{
@@ -160,7 +203,7 @@ class AvailArtifactJar constructor(
 			entryName = entryName.removeSuffix("/")
 			val qualifiedName = entryName
 				.split("/")
-				.joinToString("/", prefix = "$rootName/") {
+				.joinToString("/", prefix = "/$rootName") {
 					it.removeSuffix(AvailRootFileMetadata.availExtension)
 				}
 			val mimeType = when (type)
@@ -179,5 +222,14 @@ class AvailArtifactJar constructor(
 					digests[entryName]))
 		}
 		return metadata
+	}
+
+	companion object
+	{
+		/**
+		 * The version that represents the current structure under which Avail
+		 * libs are packaged in the artifact.
+		 */
+		internal const val CURRENT_ARTIFACT_VERSION = 1
 	}
 }

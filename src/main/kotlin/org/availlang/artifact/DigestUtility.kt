@@ -54,6 +54,34 @@ object DigestUtility
 	}
 
 	/**
+	 * Construct the contents of a single file that summarizes message digests
+	 * of all files of an Avail Module root directory structure then write it to
+	 * the provided target file.  Each input file is read, digested with the
+	 * specified [MessageDigest] algorithm (default is SHA-256), and written to
+	 * the digests contents. The entries are the file name relative to the
+	 * basePath, a colon, the hex representation of the digest of that file, and
+	 * a linefeed.
+	 *
+	 * @param rootPath
+	 *   The path to the Avail root module directory to create a digest for.
+	 * @param targetFile
+	 *   The file to write the digest to.
+	 * @param digestAlgorithm
+	 *   The [MessageDigest] algorithm to use to create the digest.
+	 * @return
+	 *   The digest contents.
+	 * @throws AvailArtifactException
+	 *   If the provided `rootPath` is not a [directory][File.isDirectory].
+	 */
+	fun writeDigestFile (
+		rootPath: String,
+		targetFile: File,
+		digestAlgorithm: String = "SHA-256")
+	{
+		targetFile.writeText(createDigest(rootPath, digestAlgorithm))
+	}
+
+	/**
 	 * Extract the digest's contents into a map keyed by the file name.
 	 *
 	 * @param digestFileContent

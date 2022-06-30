@@ -6,7 +6,7 @@ package org.availlang.artifact
  *
  * @author Richard Arriaga
  */
-enum class AvailRootFileType
+enum class ResourceType
 {
 	/** Represents an ordinary Avail module. */
 	MODULE,
@@ -25,4 +25,7 @@ enum class AvailRootFileType
 
 	/** Represents an arbitrary resource. */
 	RESOURCE;
+
+	/** A short description of the receiver. */
+	val label get() = name.lowercase()
 }
