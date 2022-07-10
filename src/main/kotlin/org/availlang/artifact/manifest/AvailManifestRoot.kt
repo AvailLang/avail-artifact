@@ -14,7 +14,8 @@ import org.availlang.json.JSONWriter
 data class AvailManifestRoot constructor(
 	val name: String,
 	val availModuleExtensions: List<String>,
-	val entryPoints: List<String>
+	val entryPoints: List<String> = listOf(),
+	val description: String = ""
 ): JSONFriendly
 {
 	override fun writeTo(writer: JSONWriter)
@@ -23,6 +24,10 @@ data class AvailManifestRoot constructor(
 			at(AvailManifestRoot::name.name)
 			{
 				write(name)
+			}
+			at(AvailManifestRoot::description.name)
+			{
+				write(description)
 			}
 			at(AvailManifestRoot::availModuleExtensions.name)
 			{

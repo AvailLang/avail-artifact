@@ -1,6 +1,7 @@
 package org.availlang.artifact.manifest
 
 import org.availlang.artifact.*
+import org.availlang.artifact.jar.JvmComponent
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.jsonPrettyPrintWriter
@@ -41,10 +42,20 @@ sealed interface AvailArtifactManifest: JSONFriendly
 	val constructed: String
 
 	/**
+	 * A description of the artifact.
+	 */
+	val description: String
+
+	/**
 	 * The map of the [AvailManifestRoot]s keyed by [AvailManifestRoot.name]
 	 * that are present in the artifact.
 	 */
 	val roots: Map<String, AvailManifestRoot>
+
+	/**
+	 * The [JvmComponent] that describes JVM components if they exist.
+	 */
+	val jvmComponent: JvmComponent
 
 	/**
 	 * The String file contents of this [AvailArtifactManifest].
@@ -146,19 +157,59 @@ sealed interface AvailArtifactManifest: JSONFriendly
 		 * @param roots
 		 *   The map of the [AvailManifestRoot]s keyed by
 		 *   [AvailManifestRoot.name] that are present in the artifact.
+		 * @param description
+		 *   The artifact's description.
+		 * @param jvmComponent
+		 *   The [JvmComponent].
 		 * @return
 		 *   The file byte contents.
 		 */
+		@Suppress("unused")
 		fun writeManifestFile (
 			artifactType: AvailArtifactType,
 			targetFile: File,
-			roots: Map<String, AvailManifestRoot>)
+			roots: Map<String, AvailManifestRoot>,
+			description: String,
+			jvmComponent: JvmComponent = JvmComponent.NONE)
 		{
 			AvailArtifactManifestV1(
 				artifactType,
 				formattedNow,
-				roots).writeFile(targetFile)
+				roots,
+				description,
+				jvmComponent
+			).writeFile(targetFile)
 		}
+
+		/**
+		 * Answer an [AvailArtifactManifest].
+		 *
+		 * @param artifactType
+		 *   The [AvailArtifactType] that represents the type of
+		 *   [AvailArtifact] that the [AvailArtifactManifest] represents.
+		 * @param roots
+		 *   The map of the [AvailManifestRoot]s keyed by
+		 *   [AvailManifestRoot.name] that are present in the artifact.
+		 * @param description
+		 *   The artifact's description.
+		 * @param jvmComponent
+		 *   The [JvmComponent].
+		 * @return
+		 *   The constructed [AvailArtifactManifest].
+		 */
+		@Suppress("unused")
+		fun manifestFile (
+			artifactType: AvailArtifactType,
+			roots: Map<String, AvailManifestRoot>,
+			description: String,
+			jvmComponent: JvmComponent = JvmComponent.NONE
+		): AvailArtifactManifest =
+				AvailArtifactManifestV1(
+					artifactType,
+					formattedNow,
+					roots,
+					description,
+					jvmComponent)
 
 		/**
 		 * Answer the [availArtifactManifestFile] contents.
@@ -169,17 +220,28 @@ sealed interface AvailArtifactManifest: JSONFriendly
 		 * @param roots
 		 *   The map of the [AvailManifestRoot]s keyed by
 		 *   [AvailManifestRoot.name] that are present in the artifact.
+		 * @param description
+		 *   The artifact's description.
+		 * @param jvmComponent
+		 *   The [JvmComponent].
 		 * @return
 		 *   The file byte contents.
 		 */
+		@Suppress("unused")
 		fun createManifestFileContents (
 			artifactType: AvailArtifactType,
-			roots: Map<String, AvailManifestRoot>
+			roots: Map<String, AvailManifestRoot>,
+			description: String,
+			jvmComponent: JvmComponent = JvmComponent.NONE
+
 		): ByteArray =
 			AvailArtifactManifestV1(
 				artifactType,
 				formattedNow,
-				roots).fileContent.toByteArray(StandardCharsets.UTF_8)
+				roots,
+				description,
+				jvmComponent
+			).fileContent.toByteArray(StandardCharsets.UTF_8)
 	}
 }
 

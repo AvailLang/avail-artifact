@@ -3,6 +3,7 @@ package org.availlang.artifact.manifest
 import org.availlang.artifact.AvailArtifactException
 import org.availlang.artifact.AvailArtifactType
 import org.availlang.artifact.formattedNow
+import org.availlang.artifact.jar.JvmComponent
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
 
@@ -26,7 +27,9 @@ import org.availlang.json.JSONWriter
 class AvailArtifactManifestV1 constructor (
 	override val artifactType: AvailArtifactType,
 	override val constructed: String,
-	override val roots: Map<String, AvailManifestRoot>
+	override val roots: Map<String, AvailManifestRoot>,
+	override val description: String = "",
+	override val jvmComponent: JvmComponent = JvmComponent.NONE
 ): AvailArtifactManifest
 {
 	override val artifactVersion: Int = 1
@@ -46,9 +49,17 @@ class AvailArtifactManifestV1 constructor (
 			{
 				write(constructed)
 			}
+			at(AvailArtifactManifest::description.name)
+			{
+				write(description)
+			}
 			at(AvailArtifactManifest::roots.name)
 			{
 				writeArray(roots.values)
+			}
+			at(AvailArtifactManifest::jvmComponent.name)
+			{
+				write(jvmComponent)
 			}
 		}
 	}
@@ -99,6 +110,18 @@ class AvailArtifactManifestV1 constructor (
 								"construction timestamp.",
 						e)
 				}
+			val description =
+				try
+				{
+					obj.getString(AvailArtifactManifest::description.name)
+				}
+				catch (e: Throwable)
+				{
+					throw AvailArtifactException(
+						"Problem accessing Avail Artifact Manifest " +
+							"description.",
+						e)
+				}
 			val roots =
 				try
 				{
@@ -111,7 +134,20 @@ class AvailArtifactManifestV1 constructor (
 					throw AvailArtifactException(
 						"Problem accessing Avail Artifact Manifest Roots.", e)
 				}
-			return AvailArtifactManifestV1(type, constructed, roots)
+			val jvmComponent =
+				try
+				{
+					JvmComponent.from(obj)
+				}
+				catch (e: Throwable)
+				{
+					throw AvailArtifactException(
+						"Problem accessing Avail Artifact Manifest " +
+							"jvmComponent.",
+						e)
+				}
+			return AvailArtifactManifestV1(
+				type, constructed, roots, description, jvmComponent)
 		}
 	}
 }
