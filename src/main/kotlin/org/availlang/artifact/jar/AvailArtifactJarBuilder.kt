@@ -13,7 +13,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.jar.*
-import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 /**
@@ -47,6 +46,11 @@ class AvailArtifactJarBuilder constructor(
 	 */
 	private val jarOutputStream: JarOutputStream
 
+	/**
+	 * The set of entries that have been added to the Jar.
+	 */
+	private val added = mutableSetOf<String>()
+
 	init
 	{
 		val manifest = Manifest()
@@ -61,15 +65,18 @@ class AvailArtifactJarBuilder constructor(
 
 		jarOutputStream =
 			JarOutputStream(FileOutputStream(outputLocation), manifest)
-		jarOutputStream.putNextEntry(ZipEntry("META-INF/"))
+		jarOutputStream.putNextEntry(JarEntry("META-INF/"))
 		jarOutputStream.closeEntry()
-		jarOutputStream.putNextEntry(ZipEntry("$artifactRootDirectory/"))
+		added.add("META-INF/")
+		jarOutputStream.putNextEntry(JarEntry("$artifactRootDirectory/"))
 		jarOutputStream.closeEntry()
-		jarOutputStream.putNextEntry(ZipEntry(
+		added.add("$artifactRootDirectory/")
+		jarOutputStream.putNextEntry(JarEntry(
 			"$artifactRootDirectory/$artifactDescriptorFileName"))
 		jarOutputStream.write(
 			PackageType.JAR.artifactDescriptor.serializedFileContent)
 		jarOutputStream.closeEntry()
+		added.add("$artifactRootDirectory/$artifactDescriptorFileName")
 	}
 
 	/**
@@ -90,13 +97,19 @@ class AvailArtifactJarBuilder constructor(
 		val root = File(rootPath)
 		if (!root.isDirectory)
 		{
+			if (rootPath.endsWith("jar"))
+			{
+				addJar(JarFile(root))
+				return
+			}
 			throw AvailArtifactException(
 				"Failed to create add module root; provided root path, " +
 					"$rootPath, is not a directory")
 		}
 
 		jarOutputStream.putNextEntry(
-			ZipEntry("$artifactRootDirectory/$rootName/"))
+			JarEntry("$artifactRootDirectory/$rootName/"))
+		added.add("$artifactRootDirectory/$rootName/")
 		jarOutputStream.closeEntry()
 		val sourceDirPrefix = AvailArtifact.rootArtifactSourcesDir(rootName)
 		root.walk()
@@ -104,7 +117,8 @@ class AvailArtifactJarBuilder constructor(
 				val pathRelativeName =
 					"$sourceDirPrefix${file.absolutePath.removePrefix(rootPath)}" +
 						if (file.isDirectory) "/" else ""
-				jarOutputStream.putNextEntry(ZipEntry(pathRelativeName))
+				jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
+				added.add(pathRelativeName)
 				if (file.isFile)
 				{
 					val fileBytes = file.readBytes()
@@ -113,15 +127,18 @@ class AvailArtifactJarBuilder constructor(
 				jarOutputStream.closeEntry()
 			}
 		jarOutputStream.putNextEntry(
-			ZipEntry("${AvailArtifact.rootArtifactDigestDirPath(rootName)}/$availDigestsPathInArtifact/"))
+			JarEntry("${AvailArtifact.rootArtifactDigestDirPath(rootName)}/$availDigestsPathInArtifact/"))
+		added.add("${AvailArtifact.rootArtifactDigestDirPath(rootName)}/$availDigestsPathInArtifact/")
 		jarOutputStream.closeEntry()
 		val digestFileName = AvailArtifact.rootArtifactDigestFilePath(rootName)
 		val digest = DigestUtility.createDigest(rootPath, digestAlgorithm)
-		jarOutputStream.putNextEntry(ZipEntry(digestFileName))
+		jarOutputStream.putNextEntry(JarEntry(digestFileName))
+		added.add(digestFileName)
 		jarOutputStream.write(digest.toByteArray(Charsets.UTF_8))
 		jarOutputStream.closeEntry()
 		jarOutputStream.putNextEntry(
-			ZipEntry(AvailArtifactManifest.availArtifactManifestFile))
+			JarEntry(AvailArtifactManifest.availArtifactManifestFile))
+		added.add(AvailArtifactManifest.availArtifactManifestFile)
 		jarOutputStream.write(
 			availArtifactManifest.fileContent.toByteArray(Charsets.UTF_8))
 		jarOutputStream.closeEntry()
@@ -135,14 +152,49 @@ class AvailArtifactJarBuilder constructor(
 	 */
 	fun addJar (jarFile: JarFile)
 	{
+		val jarSimpleName = File(jarFile.name).name
 		jarFile.entries().asIterator().forEach {
 			when (it.name)
 			{
-				"META-INF/" -> {} // Do not add it
+				"META-INF/", "$artifactRootDirectory/" -> {} // Do not add it
 				"META-INF/MANIFEST.MF" ->
 				{
+
+					val adjustedManifest =
+						"META-INF/$jarSimpleName/MANIFEST.MF"
 					jarOutputStream.putNextEntry(
-						ZipEntry("META-INF/${jarFile.name}/MANIFEST.MF"))
+						JarEntry(adjustedManifest))
+					added.add(adjustedManifest)
+					val bytes = ByteArray(it.size.toInt())
+					val stream = DataInputStream(
+						BufferedInputStream(
+							jarFile.getInputStream(it), it.size.toInt()))
+					stream.readFully(bytes)
+					jarOutputStream.write(bytes)
+					jarOutputStream.closeEntry()
+				}
+				"$artifactRootDirectory/$artifactDescriptorFileName" ->
+				{
+					val adjustedDescriptor =
+						"$artifactRootDirectory/$jarSimpleName/$artifactDescriptorFileName"
+					jarOutputStream.putNextEntry(
+						JarEntry(adjustedDescriptor))
+					added.add(adjustedDescriptor)
+					val bytes = ByteArray(it.size.toInt())
+					val stream = DataInputStream(
+						BufferedInputStream(
+							jarFile.getInputStream(it), it.size.toInt()))
+					stream.readFully(bytes)
+					jarOutputStream.write(bytes)
+					jarOutputStream.closeEntry()
+				}
+				AvailArtifactManifest.availArtifactManifestFile ->
+				{
+					val adjustedAvailManifest =
+						"$artifactRootDirectory/$jarSimpleName/${AvailArtifactManifest.manifestFileName}"
+					jarOutputStream.putNextEntry(
+						JarEntry(adjustedAvailManifest))
+					added.add(adjustedAvailManifest)
 					val bytes = ByteArray(it.size.toInt())
 					val stream = DataInputStream(
 						BufferedInputStream(
@@ -153,17 +205,21 @@ class AvailArtifactJarBuilder constructor(
 				}
 				else ->
 				{
-					jarOutputStream.putNextEntry(JarEntry(it))
-					if (it.size > 0)
+					if (!added.contains(it.name))
 					{
-						val bytes = ByteArray(it.size.toInt())
-						val stream = DataInputStream(
-							BufferedInputStream(
-								jarFile.getInputStream(it), it.size.toInt()))
-						stream.readFully(bytes)
-						jarOutputStream.write(bytes)
+						jarOutputStream.putNextEntry(JarEntry(it))
+						added.add(it.name)
+						if (it.size > 0)
+						{
+							val bytes = ByteArray(it.size.toInt())
+							val stream = DataInputStream(
+								BufferedInputStream(
+									jarFile.getInputStream(it), it.size.toInt()))
+							stream.readFully(bytes)
+							jarOutputStream.write(bytes)
+						}
+						jarOutputStream.closeEntry()
 					}
-					jarOutputStream.closeEntry()
 				}
 			}
 		}
@@ -178,35 +234,20 @@ class AvailArtifactJarBuilder constructor(
 	fun addZip (zipFile: ZipFile)
 	{
 		zipFile.entries().asIterator().forEach {
-			when (it.name)
+			if (!added.contains(it.name))
 			{
-				"META-INF/" -> {} // Do not add it
-				"META-INF/MANIFEST.MF" ->
+				jarOutputStream.putNextEntry(JarEntry(it))
+				added.add(it.name)
+				if (it.size > 0)
 				{
-					jarOutputStream.putNextEntry(
-						ZipEntry("META-INF/${zipFile.name}/MANIFEST.MF"))
 					val bytes = ByteArray(it.size.toInt())
 					val stream = DataInputStream(
 						BufferedInputStream(
 							zipFile.getInputStream(it), it.size.toInt()))
 					stream.readFully(bytes)
 					jarOutputStream.write(bytes)
-					jarOutputStream.closeEntry()
 				}
-				else ->
-				{
-					jarOutputStream.putNextEntry(ZipEntry(it))
-					if (it.size > 0)
-					{
-						val bytes = ByteArray(it.size.toInt())
-						val stream = DataInputStream(
-							BufferedInputStream(
-								zipFile.getInputStream(it), it.size.toInt()))
-						stream.readFully(bytes)
-						jarOutputStream.write(bytes)
-					}
-					jarOutputStream.closeEntry()
-				}
+				jarOutputStream.closeEntry()
 			}
 		}
 	}
@@ -229,13 +270,17 @@ class AvailArtifactJarBuilder constructor(
 				val pathRelativeName = dir.name +
 					file.absolutePath.removePrefix(dirPath) +
 						if (file.isDirectory) "/" else ""
-				jarOutputStream.putNextEntry(ZipEntry(pathRelativeName))
-				if (file.isFile)
+				if (!added.add(pathRelativeName))
 				{
-					val fileBytes = file.readBytes()
-					jarOutputStream.write(fileBytes)
+					jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
+					added.add(pathRelativeName)
+					if (file.isFile)
+					{
+						val fileBytes = file.readBytes()
+						jarOutputStream.write(fileBytes)
+					}
+					jarOutputStream.closeEntry()
 				}
-				jarOutputStream.closeEntry()
 			}
 	}
 
