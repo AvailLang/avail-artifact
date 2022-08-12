@@ -23,7 +23,9 @@ object DigestUtility
 	 * @param rootPath
 	 *   The path to the Avail root module directory to create a digest for.
 	 * @param digestAlgorithm
-	 *   The [MessageDigest] algorithm to use to create the digest.
+	 *   The [MessageDigest] algorithm to use to create the digest. This must be
+	 *   a valid algorithm accessible from
+	 *   [java.security.MessageDigest.getInstance].
 	 * @return
 	 *   The digest contents.
 	 * @throws AvailArtifactException

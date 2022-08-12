@@ -137,7 +137,9 @@ class AvailArtifactManifestV1 constructor (
 			val jvmComponent =
 				try
 				{
-					JvmComponent.from(obj)
+					val jvmComponentObj = obj.getObject(
+						AvailArtifactManifest::jvmComponent.name)
+					JvmComponent.from(jvmComponentObj)
 				}
 				catch (e: Throwable)
 				{

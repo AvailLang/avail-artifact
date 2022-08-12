@@ -5,17 +5,33 @@ import org.availlang.artifact.AvailArtifactException
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
+import java.security.MessageDigest
 
 /**
  * Contains information about an Avail Module Root inside an [AvailArtifact].
  *
  * @author Richard Arriaga
+ *
+ * @property name
+ *   The name of the Avail root.
+ * @property availModuleExtensions
+ *   The file extensions that signify files that should be treated as Avail
+ *   modules.
+ * @property entryPoints
+ *   The Avail entry points exposed by this root.
+ * @property description
+ *   A description of the root.
+ * @property digestAlgorithm
+ *   The [MessageDigest] algorithm to use to create the digests for all the
+ *   root's contents. This must be a valid algorithm accessible from
+ *   [java.security.MessageDigest.getInstance].
  */
 data class AvailManifestRoot constructor(
 	val name: String,
 	val availModuleExtensions: List<String>,
 	val entryPoints: List<String> = listOf(),
-	val description: String = ""
+	val description: String = "",
+	val digestAlgorithm: String = "SHA-256"
 ): JSONFriendly
 {
 	override fun writeTo(writer: JSONWriter)
@@ -28,6 +44,10 @@ data class AvailManifestRoot constructor(
 			at(AvailManifestRoot::description.name)
 			{
 				write(description)
+			}
+			at(AvailManifestRoot::digestAlgorithm.name)
+			{
+				write(digestAlgorithm)
 			}
 			at(AvailManifestRoot::availModuleExtensions.name)
 			{
@@ -63,6 +83,18 @@ data class AvailManifestRoot constructor(
 				{
 					throw AvailArtifactException(
 						"Problem extracting Avail Manifest Root name.", e)
+				}
+			val digestAlgorithm =
+				try
+				{
+					obj.getString(AvailManifestRoot::digestAlgorithm.name)
+				}
+				catch (e: Throwable)
+				{
+					throw AvailArtifactException(
+						"Problem extracting Avail Manifest Root digest " +
+							"algorithm.",
+						e)
 				}
 			val extensions =
 				try

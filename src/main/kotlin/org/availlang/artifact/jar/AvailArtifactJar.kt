@@ -105,6 +105,27 @@ class AvailArtifactJar constructor(
 		return bytes
 	}
 
+	/**
+	 * Extract the targeted file from a specific root from the backed [jarFile].
+	 *
+	 * This task happens synchronously to simplify the complexity of working
+	 * with the artifact as it is not deemed necessary for this task to be
+	 * overly performant.
+	 *
+	 * @param rootName
+	 *   The name of the root to extract the file from.
+	 * @param filePath
+	 *   The root-relative file to extract.
+	 * @return
+	 *   The file contents as a raw [ByteArray].
+	 * @throws AvailArtifactException
+	 *   If the target file is not retrievable.
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	fun extractRooteFile (rootName: String, filePath: String): ByteArray =
+		extractFile("${AvailArtifact.artifactRootDirectory}/$rootName/" +
+			"${AvailArtifact.availSourcesPathInArtifact}/$filePath")
+
 	override fun extractManifest(): AvailArtifactManifest
 	{
 		val rawManifest =

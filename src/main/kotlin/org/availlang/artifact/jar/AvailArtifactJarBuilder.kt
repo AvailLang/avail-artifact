@@ -11,7 +11,6 @@ import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.security.MessageDigest
 import java.util.jar.*
 import java.util.zip.ZipFile
 
@@ -82,40 +81,33 @@ class AvailArtifactJarBuilder constructor(
 	/**
 	 * Add a Module Root to the Avail Library Jar.
 	 *
-	 * @param rootPath
-	 *   The String path to the root to add.
-	 * @param rootName
-	 *   The name of the root to add.
-	 * @param digestAlgorithm
-	 *   The [MessageDigest] algorithm to use to create the digest.
+	 * @param targetRoot
+	 *   The [AvailRootArtifactTarget] path to the root to add.
 	 */
-	fun addRoot (
-		rootPath: String,
-		rootName: String,
-		digestAlgorithm: String)
+	fun addRoot (targetRoot: AvailRootArtifactTarget)
 	{
-		val root = File(rootPath)
+		val root = File(targetRoot.rootPath)
 		if (!root.isDirectory)
 		{
-			if (rootPath.endsWith("jar"))
+			if (targetRoot.rootPath.endsWith("jar"))
 			{
 				addJar(JarFile(root))
 				return
 			}
 			throw AvailArtifactException(
 				"Failed to create add module root; provided root path, " +
-					"$rootPath, is not a directory")
+					"${targetRoot.rootPath}, is not a directory")
 		}
 
 		jarOutputStream.putNextEntry(
-			JarEntry("$artifactRootDirectory/$rootName/"))
-		added.add("$artifactRootDirectory/$rootName/")
+			JarEntry("$artifactRootDirectory/${targetRoot.rootName}/"))
+		added.add("$artifactRootDirectory/${targetRoot.rootName}/")
 		jarOutputStream.closeEntry()
-		val sourceDirPrefix = AvailArtifact.rootArtifactSourcesDir(rootName)
+		val sourceDirPrefix = AvailArtifact.rootArtifactSourcesDir(targetRoot.rootName)
 		root.walk()
 			.forEach { file ->
 				val pathRelativeName =
-					"$sourceDirPrefix${file.absolutePath.removePrefix(rootPath)}" +
+					"$sourceDirPrefix${file.absolutePath.removePrefix(targetRoot.rootPath)}" +
 						if (file.isDirectory) "/" else ""
 				jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
 				added.add(pathRelativeName)
@@ -127,11 +119,15 @@ class AvailArtifactJarBuilder constructor(
 				jarOutputStream.closeEntry()
 			}
 		jarOutputStream.putNextEntry(
-			JarEntry("${AvailArtifact.rootArtifactDigestDirPath(rootName)}/$availDigestsPathInArtifact/"))
-		added.add("${AvailArtifact.rootArtifactDigestDirPath(rootName)}/$availDigestsPathInArtifact/")
+			JarEntry(
+				"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.rootName)}/$availDigestsPathInArtifact/"))
+		added.add(
+			"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.rootName)}/$availDigestsPathInArtifact/")
 		jarOutputStream.closeEntry()
-		val digestFileName = AvailArtifact.rootArtifactDigestFilePath(rootName)
-		val digest = DigestUtility.createDigest(rootPath, digestAlgorithm)
+		val digestFileName = AvailArtifact
+			.rootArtifactDigestFilePath(targetRoot.rootName)
+		val digest = DigestUtility
+			.createDigest(targetRoot.rootPath, targetRoot.availManifestRoot.digestAlgorithm)
 		jarOutputStream.putNextEntry(JarEntry(digestFileName))
 		added.add(digestFileName)
 		jarOutputStream.write(digest.toByteArray(Charsets.UTF_8))
@@ -253,6 +249,37 @@ class AvailArtifactJarBuilder constructor(
 	}
 
 	/**
+	 * Add a singular [File] to be written in the specified target directory
+	 * path inside the jar.
+	 *
+	 * @param file
+	 *   The [File] to write. Note this must not be a directory.
+	 * @param targetDirectory
+	 *   The path relative directory where the file should be placed inside the
+	 *   jar file.
+	 */
+	fun addFile (file: File, targetDirectory: String)
+	{
+		require(!file.isDirectory)
+		{
+			"Expected $file to be a file not a directory!"
+		}
+
+		val pathRelativeName = "$targetDirectory/${file.name}"
+		if (!added.add(pathRelativeName))
+		{
+			jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
+			added.add(pathRelativeName)
+			if (file.isFile)
+			{
+				val fileBytes = file.readBytes()
+				jarOutputStream.write(fileBytes)
+			}
+			jarOutputStream.closeEntry()
+		}
+	}
+
+	/**
 	 * Add the contents of the directory to the jar being built.
 	 *
 	 * @param dir
@@ -264,24 +291,7 @@ class AvailArtifactJarBuilder constructor(
 		{
 			"Expected $dir to be a directory!"
 		}
-		val dirPath = dir.absolutePath
-		dir.walk()
-			.forEach { file ->
-				val pathRelativeName = dir.name +
-					file.absolutePath.removePrefix(dirPath) +
-						if (file.isDirectory) "/" else ""
-				if (!added.add(pathRelativeName))
-				{
-					jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
-					added.add(pathRelativeName)
-					if (file.isFile)
-					{
-						val fileBytes = file.readBytes()
-						jarOutputStream.write(fileBytes)
-					}
-					jarOutputStream.closeEntry()
-				}
-			}
+		dir.walk().forEach { file -> addFile(file, dir.name) }
 	}
 
 	/**
@@ -310,7 +320,13 @@ class AvailArtifactJarBuilder constructor(
 					AvailArtifactType.LIBRARY,
 					formattedNow,
 					mapOf("avail" to AvailManifestRoot("avail", listOf(".avail"), listOf("\"!_\"")))))
-			b.addRoot(c, "avail", "SHA-256")
+			b.addRoot(AvailRootArtifactTarget(
+				c,
+				AvailManifestRoot(
+					"avail",
+					listOf(".avail"),
+					listOf("!_"),
+					"The singular module root of Avail standard library.")))
 			b.addJar(JarFile(File("avail-artifact-2.0.0-SNAPSHOT.jar")))
 			b.addZip(ZipFile(File("Archive.zip")))
 			b.addDir(File("k"))
