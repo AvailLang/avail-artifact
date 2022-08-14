@@ -21,13 +21,13 @@ import org.availlang.json.JSONWriter
  *   The UTC timestamp that represents when the artifact was constructed. Must
  *   be created using [formattedNow] when newly constructing an artifact.
  * @param roots
- *   The map of the [AvailManifestRoot]s keyed by [AvailManifestRoot.name]
+ *   The map of the [AvailRootManifest]s keyed by [AvailRootManifest.name]
  *   that are present in the artifact.
  */
 class AvailArtifactManifestV1 constructor (
 	override val artifactType: AvailArtifactType,
 	override val constructed: String,
-	override val roots: Map<String, AvailManifestRoot>,
+	override val roots: Map<String, AvailRootManifest>,
 	override val description: String = "",
 	override val jvmComponent: JvmComponent = JvmComponent.NONE
 ): AvailArtifactManifest
@@ -126,7 +126,7 @@ class AvailArtifactManifestV1 constructor (
 				try
 				{
 					obj.getArray(AvailArtifactManifest::roots.name)
-						.map { AvailManifestRoot.from(it as JSONObject) }
+						.map { AvailRootManifest.from(it as JSONObject) }
 						.associateBy { it.name }
 				}
 				catch (e: Throwable)

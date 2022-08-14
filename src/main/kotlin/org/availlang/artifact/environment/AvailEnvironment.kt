@@ -35,6 +35,14 @@ object AvailEnvironment
 		"$availHome/libraries"
 
 	/**
+	 * The workbench directory inside the [Avail home directory][availHome]
+	 * where files globally related to the Avail Workbench are stored.
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	val availHomeWorkbench: String get() =
+		"$availHome/workbench"
+
+	/**
 	 * Add the
 	 *   1. [`.avail` home directory][availHomeLibs]
 	 *   2. [`.avail/repositories` repositories directory][availHomeRepos]
@@ -54,6 +62,11 @@ object AvailEnvironment
 		if (!availLibs.exists())
 		{
 			availLibs.mkdirs()
+		}
+		val availWb = File(availHomeWorkbench)
+		if (!availWb.exists())
+		{
+			availWb.mkdirs()
 		}
 	}
 

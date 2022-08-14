@@ -117,7 +117,7 @@ class UnexplainedProblem constructor (
 }
 
 /**
- * A [ProjectProblem] with a [ProjectLocation].
+ * A [ProjectProblem] with a [AvailLocation].
  *
  * @author Richard Arriaga
  *

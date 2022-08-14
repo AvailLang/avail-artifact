@@ -2,11 +2,14 @@ package org.availlang.artifact.jar
 
 import org.availlang.artifact.*
 import org.availlang.artifact.ArtifactDescriptor.Companion.artifactDescriptorFileName
+import org.availlang.artifact.ArtifactDescriptor.Companion.artifactDescriptorFilePath
 import org.availlang.artifact.AvailArtifact.Companion.artifactRootDirectory
 import org.availlang.artifact.AvailArtifact.Companion.availDigestsPathInArtifact
+import org.availlang.artifact.environment.project.Scheme
 import org.availlang.artifact.manifest.AvailArtifactManifest
-import org.availlang.artifact.manifest.AvailArtifactManifestV1
-import org.availlang.artifact.manifest.AvailManifestRoot
+import org.availlang.artifact.manifest.AvailArtifactManifest.Companion.availArtifactManifestFile
+import org.availlang.artifact.manifest.AvailArtifactManifest.Companion.manifestFileName
+import org.availlang.artifact.roots.AvailRoot
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.File
@@ -70,44 +73,44 @@ class AvailArtifactJarBuilder constructor(
 		jarOutputStream.putNextEntry(JarEntry("$artifactRootDirectory/"))
 		jarOutputStream.closeEntry()
 		added.add("$artifactRootDirectory/")
-		jarOutputStream.putNextEntry(JarEntry(
-			"$artifactRootDirectory/$artifactDescriptorFileName"))
+		jarOutputStream.putNextEntry(JarEntry(artifactDescriptorFilePath))
 		jarOutputStream.write(
 			PackageType.JAR.artifactDescriptor.serializedFileContent)
 		jarOutputStream.closeEntry()
-		added.add("$artifactRootDirectory/$artifactDescriptorFileName")
+		added.add(artifactDescriptorFilePath)
 	}
 
 	/**
 	 * Add a Module Root to the Avail Library Jar.
 	 *
 	 * @param targetRoot
-	 *   The [AvailRootArtifactTarget] path to the root to add.
+	 *   The [AvailRoot] path to the root to add.
 	 */
-	fun addRoot (targetRoot: AvailRootArtifactTarget)
+	fun addRoot (targetRoot: AvailRoot)
 	{
-		val root = File(targetRoot.rootPath)
+		val rootPath = targetRoot.absolutePath.removePrefix(Scheme.JAR.prefix)
+		val root = File(rootPath)
 		if (!root.isDirectory)
 		{
-			if (targetRoot.rootPath.endsWith("jar"))
+			if (rootPath.endsWith("jar"))
 			{
 				addJar(JarFile(root))
 				return
 			}
 			throw AvailArtifactException(
-				"Failed to create add module root; provided root path, " +
-					"${targetRoot.rootPath}, is not a directory")
+				"Failed to add module root, ${targetRoot.name}; provided " +
+					"root path, $rootPath, is not a directory")
 		}
-
 		jarOutputStream.putNextEntry(
-			JarEntry("$artifactRootDirectory/${targetRoot.rootName}/"))
-		added.add("$artifactRootDirectory/${targetRoot.rootName}/")
+			JarEntry("$artifactRootDirectory/${targetRoot.name}/"))
+		added.add("$artifactRootDirectory/${targetRoot.name}/")
 		jarOutputStream.closeEntry()
-		val sourceDirPrefix = AvailArtifact.rootArtifactSourcesDir(targetRoot.rootName)
+
+		val sourceDirPrefix = AvailArtifact.rootArtifactSourcesDir(targetRoot.name)
 		root.walk()
 			.forEach { file ->
 				val pathRelativeName =
-					"$sourceDirPrefix${file.absolutePath.removePrefix(targetRoot.rootPath)}" +
+					"$sourceDirPrefix${file.absolutePath.removePrefix(rootPath)}" +
 						if (file.isDirectory) "/" else ""
 				jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
 				added.add(pathRelativeName)
@@ -120,24 +123,20 @@ class AvailArtifactJarBuilder constructor(
 			}
 		jarOutputStream.putNextEntry(
 			JarEntry(
-				"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.rootName)}/$availDigestsPathInArtifact/"))
+				"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.name)}/$availDigestsPathInArtifact/"))
 		added.add(
-			"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.rootName)}/$availDigestsPathInArtifact/")
+			"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.name)}/$availDigestsPathInArtifact/")
 		jarOutputStream.closeEntry()
+
 		val digestFileName = AvailArtifact
-			.rootArtifactDigestFilePath(targetRoot.rootName)
+			.rootArtifactDigestFilePath(targetRoot.name)
 		val digest = DigestUtility
-			.createDigest(targetRoot.rootPath, targetRoot.availManifestRoot.digestAlgorithm)
+			.createDigest(rootPath, targetRoot.digestAlgorithm)
 		jarOutputStream.putNextEntry(JarEntry(digestFileName))
-		added.add(digestFileName)
 		jarOutputStream.write(digest.toByteArray(Charsets.UTF_8))
+		added.add(digestFileName)
 		jarOutputStream.closeEntry()
-		jarOutputStream.putNextEntry(
-			JarEntry(AvailArtifactManifest.availArtifactManifestFile))
-		added.add(AvailArtifactManifest.availArtifactManifestFile)
-		jarOutputStream.write(
-			availArtifactManifest.fileContent.toByteArray(Charsets.UTF_8))
-		jarOutputStream.closeEntry()
+
 	}
 
 	/**
@@ -155,11 +154,9 @@ class AvailArtifactJarBuilder constructor(
 				"META-INF/", "$artifactRootDirectory/" -> {} // Do not add it
 				"META-INF/MANIFEST.MF" ->
 				{
-
 					val adjustedManifest =
 						"META-INF/$jarSimpleName/MANIFEST.MF"
-					jarOutputStream.putNextEntry(
-						JarEntry(adjustedManifest))
+					jarOutputStream.putNextEntry(JarEntry(adjustedManifest))
 					added.add(adjustedManifest)
 					val bytes = ByteArray(it.size.toInt())
 					val stream = DataInputStream(
@@ -169,7 +166,7 @@ class AvailArtifactJarBuilder constructor(
 					jarOutputStream.write(bytes)
 					jarOutputStream.closeEntry()
 				}
-				"$artifactRootDirectory/$artifactDescriptorFileName" ->
+				artifactDescriptorFilePath ->
 				{
 					val adjustedDescriptor =
 						"$artifactRootDirectory/$jarSimpleName/$artifactDescriptorFileName"
@@ -184,12 +181,12 @@ class AvailArtifactJarBuilder constructor(
 					jarOutputStream.write(bytes)
 					jarOutputStream.closeEntry()
 				}
-				AvailArtifactManifest.availArtifactManifestFile ->
+				availArtifactManifestFile ->
 				{
 					val adjustedAvailManifest =
-						"$artifactRootDirectory/$jarSimpleName/${AvailArtifactManifest.manifestFileName}"
-					jarOutputStream.putNextEntry(
-						JarEntry(adjustedAvailManifest))
+						"$artifactRootDirectory/$jarSimpleName/$manifestFileName"
+					val entry = JarEntry(adjustedAvailManifest)
+					jarOutputStream.putNextEntry(entry)
 					added.add(adjustedAvailManifest)
 					val bytes = ByteArray(it.size.toInt())
 					val stream = DataInputStream(
@@ -204,7 +201,6 @@ class AvailArtifactJarBuilder constructor(
 					if (!added.contains(it.name))
 					{
 						jarOutputStream.putNextEntry(JarEntry(it))
-						added.add(it.name)
 						if (it.size > 0)
 						{
 							val bytes = ByteArray(it.size.toInt())
@@ -214,6 +210,7 @@ class AvailArtifactJarBuilder constructor(
 							stream.readFully(bytes)
 							jarOutputStream.write(bytes)
 						}
+						added.add(it.name)
 						jarOutputStream.closeEntry()
 					}
 				}
@@ -230,10 +227,9 @@ class AvailArtifactJarBuilder constructor(
 	fun addZip (zipFile: ZipFile)
 	{
 		zipFile.entries().asIterator().forEach {
-			if (!added.contains(it.name))
+			if (!added.add(it.name))
 			{
 				jarOutputStream.putNextEntry(JarEntry(it))
-				added.add(it.name)
 				if (it.size > 0)
 				{
 					val bytes = ByteArray(it.size.toInt())
@@ -269,7 +265,6 @@ class AvailArtifactJarBuilder constructor(
 		if (!added.add(pathRelativeName))
 		{
 			jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
-			added.add(pathRelativeName)
 			if (file.isFile)
 			{
 				val fileBytes = file.readBytes()
@@ -299,38 +294,15 @@ class AvailArtifactJarBuilder constructor(
 	 */
 	fun finish ()
 	{
+		jarOutputStream.putNextEntry(
+			JarEntry(availArtifactManifestFile))
+		jarOutputStream.write(
+			availArtifactManifest.fileContent.toByteArray(Charsets.UTF_8))
+		added.add(availArtifactManifestFile)
+		jarOutputStream.closeEntry()
+
 		jarOutputStream.finish()
 		jarOutputStream.flush()
 		jarOutputStream.close()
-	}
-
-	companion object
-	{
-		@Throws(Exception::class)
-		@JvmStatic
-		fun main (args: Array<String>)
-		{
-			val c = "/Users/Rich/Development/avail-repos/avail/distro/src/avail"
-
-			val b = AvailArtifactJarBuilder(
-				"/Users/Rich/Development/avail-repos/avail-artifact/avail-lib.jar",
-				"1.0.99",
-				"Avail Standard Test Library",
-				AvailArtifactManifestV1(
-					AvailArtifactType.LIBRARY,
-					formattedNow,
-					mapOf("avail" to AvailManifestRoot("avail", listOf(".avail"), listOf("\"!_\"")))))
-			b.addRoot(AvailRootArtifactTarget(
-				c,
-				AvailManifestRoot(
-					"avail",
-					listOf(".avail"),
-					listOf("!_"),
-					"The singular module root of Avail standard library.")))
-			b.addJar(JarFile(File("avail-artifact-2.0.0-SNAPSHOT.jar")))
-			b.addZip(ZipFile(File("Archive.zip")))
-			b.addDir(File("k"))
-			b.finish()
-		}
 	}
 }

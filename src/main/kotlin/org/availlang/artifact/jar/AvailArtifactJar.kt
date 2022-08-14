@@ -9,6 +9,7 @@ import java.net.URI
 import java.util.jar.JarFile
 import org.availlang.artifact.ResourceType.*
 import java.util.*
+import java.util.jar.Attributes
 import java.util.jar.JarEntry
 
 /**
@@ -47,6 +48,17 @@ class AvailArtifactJar constructor(
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
 	val jarFileEntries: Enumeration<JarEntry> get() = jarFile.entries()
+
+	/**
+	 * Extracts the [Attributes.Name.IMPLEMENTATION_VERSION] from the manifest.
+	 *
+	 * @return
+	 *   The implementation version or `null` if not present in the [jarFile]
+	 *   [manifest][JarFile.getManifest].
+	 */
+	fun getImplementationVersion(): String? =
+		jarFile.manifest
+			.mainAttributes[Attributes.Name.IMPLEMENTATION_VERSION] as? String
 
 	override val name: String
 

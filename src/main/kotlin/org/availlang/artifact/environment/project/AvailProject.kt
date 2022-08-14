@@ -51,7 +51,7 @@ import java.util.UUID
  *   `true` indicates use of Avail Workbench's dark mode; `false` for light
  *   mode.
  * @property repositoryLocation
- *   The [ProjectLocation] for the Avail repository where a persistent Avail
+ *   The [AvailLocation] for the Avail repository where a persistent Avail
  *   indexed file of compiled modules are stored.
  * @property id
  *   The id that uniquely identifies the project.
@@ -61,7 +61,7 @@ import java.util.UUID
 class AvailProject constructor(
 	val name: String,
 	val darkMode: Boolean,
-	val repositoryLocation: ProjectLocation,
+	val repositoryLocation: AvailLocation,
 	val id: String = UUID.randomUUID().toString(),
 	val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf()
 ): JSONFriendly
@@ -140,6 +140,12 @@ class AvailProject constructor(
 		const val CONFIG_FILE_NAME = "config/avail-config.json"
 
 		/**
+		 * The name of the directory where the roots are stored for an
+		 * [AvailProject].
+		 */
+		const val ROOTS_DIR = "roots"
+
+		/**
 		 * Extract and build a [AvailProject] from the provided
 		 * [JSONObject].
 		 *
@@ -159,7 +165,7 @@ class AvailProject constructor(
 			val name = jsonObject.getString(AvailProject::name.name)
 			val darkMode =
 				jsonObject.getBoolean(AvailProject::darkMode.name)
-			val repoLocation = ProjectLocation.from(
+			val repoLocation = AvailLocation.from(
 				projectDirectory,
 				jsonObject.getObject(
 					AvailProject::repositoryLocation.name))

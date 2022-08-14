@@ -15,7 +15,7 @@ import java.util.*
  * @property name
  *   The name of the module root.
  * @property location
- *   The [ProjectLocation] of this root.
+ *   The [AvailLocation] of this root.
  * @property editable
  *   `true` indicates this root is editable by the project; `false` otherwise.
  * @property id
@@ -25,7 +25,7 @@ class AvailProjectRoot constructor(
 	val projectDirectory: String,
 	val scheme: String,
 	var name: String,
-	var location: ProjectLocation,
+	var location: AvailLocation,
 	var editable: Boolean = location.editable,
 	val id: String = UUID.randomUUID().toString()
 ): JSONFriendly
@@ -35,7 +35,7 @@ class AvailProjectRoot constructor(
 	 *
 	 * `"$name=$uri"`
 	 */
-	val modulePath: String = "$name=$scheme${location.fullPath(projectDirectory)}"
+	val modulePath: String = "$name=$scheme${location.fullPath}"
 
 	override fun writeTo(writer: JSONWriter)
 	{
@@ -68,7 +68,7 @@ class AvailProjectRoot constructor(
 				projectDirectory,
 				jsonObject.getString(AvailProjectRoot::scheme.name),
 				jsonObject.getString(AvailProjectRoot::name.name),
-				ProjectLocation.from(
+				AvailLocation.from(
 					jsonObject.getString(AvailProjectRoot::projectDirectory.name),
 					jsonObject.getObject(AvailProjectRoot::location.name)),
 				jsonObject.getBoolean(AvailProjectRoot::editable.name),

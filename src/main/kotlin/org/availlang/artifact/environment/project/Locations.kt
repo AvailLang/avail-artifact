@@ -32,6 +32,7 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.environment.AvailEnvironment
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -61,8 +62,8 @@ enum class Scheme constructor(val prefix: String)
 }
 
 /**
- * Represents a location of a URI location for something related to the
- * Avail project.
+ * Represents a location of a URI location for something related to an
+ * [AvailEnvironment] project.
  *
  * @author Richard Arriaga
  *
@@ -73,7 +74,7 @@ enum class Scheme constructor(val prefix: String)
  * @property path
  *   The path to this location.
  */
-sealed class ProjectLocation constructor(
+sealed class AvailLocation constructor(
 	val locationType: LocationType,
 	val scheme: Scheme,
 	val path: String
@@ -81,11 +82,13 @@ sealed class ProjectLocation constructor(
 {
 	/**
 	 * Answer the full path to the location.
-	 *
-	 * @param projectDirectory
-	 *   The root of the project directory.
 	 */
-	abstract fun fullPath(projectDirectory: String): String
+	val fullPath: String get() = "${scheme.prefix}$fullPathNoPrefix"
+
+	/**
+	 * Answer the full path to the location.
+	 */
+	abstract val fullPathNoPrefix: String
 
 	/**
 	 * Are the contents of this location editable by this project? `true`
@@ -96,16 +99,16 @@ sealed class ProjectLocation constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(ProjectLocation::locationType.name) { write(locationType.name) }
-			at(ProjectLocation::scheme.name) { write(scheme.name) }
-			at(ProjectLocation::path.name) { write(path) }
+			at(AvailLocation::locationType.name) { write(locationType.name) }
+			at(AvailLocation::scheme.name) { write(scheme.name) }
+			at(AvailLocation::path.name) { write(path) }
 		}
 	}
 
 	override fun equals(other: Any?): Boolean
 	{
 		if (this === other) return true
-		if (other !is ProjectLocation) return false
+		if (other !is AvailLocation) return false
 
 		if (path != other.path) return false
 
@@ -133,61 +136,113 @@ sealed class ProjectLocation constructor(
 		invalid
 		{
 			override fun location(
-				projectDirectory: String,
+				pathRelativeSuffix: String,
 				path: String,
 				scheme: Scheme
-			): ProjectLocation =
+			): AvailLocation =
 				InvalidLocation(
 					path,
 					"Location type is literally $name, which not allowed.")
+		},
+
+		/** The path is relative to the [AvailEnvironment.availHome]. */
+		availHome
+		{
+			override fun location(
+				pathRelativeSuffix: String,
+				path: String,
+				scheme: Scheme
+			): AvailLocation = AvailHome(path, scheme)
 		},
 
 		/** The path is relative to the user's home directory. */
 		home
 		{
 			override fun location(
-				projectDirectory: String,
+				pathRelativeSuffix: String,
 				path: String,
 				scheme: Scheme
-			): ProjectLocation = UserHome(path, scheme)
+			): AvailLocation = UserHome(path, scheme)
+		},
+
+		/** The path is relative to the [AvailEnvironment.availHomeLibs]. */
+		availLibraries
+		{
+			override fun location(
+				pathRelativeSuffix: String,
+				path: String,
+				scheme: Scheme
+			): AvailLocation = AvailLibraries(path, scheme)
+		},
+
+		/** The path is relative to the [AvailEnvironment.availHomeRepos]. */
+		availRepositories
+		{
+			override fun location(
+				pathRelativeSuffix: String,
+				path: String,
+				scheme: Scheme
+			): AvailLocation = AvailRepositories(path, scheme)
+		},
+
+		/**
+		 * The path is relative to the [AvailEnvironment.availHomeWorkbench].
+		 */
+		availHomeWorkbench
+		{
+			override fun location(
+				pathRelativeSuffix: String,
+				path: String,
+				scheme: Scheme
+			): AvailLocation = AvailHomeWorkbench(path, scheme)
 		},
 
 		/** The path is relative to the project root directory. */
 		project
 		{
 			override fun location(
-				projectDirectory: String,
+				pathRelativeSuffix: String,
 				path: String,
 				scheme: Scheme
-			): ProjectLocation = ProjectHome(path, scheme)
+			): AvailLocation = ProjectHome(path, scheme, pathRelativeSuffix)
 		},
 
-		/** The path is relative to the user's home directory. */
+		/** The path is relative to [AvailProject.ROOTS_DIR]. */
+		projectRoots
+		{
+			override fun location(
+				pathRelativeSuffix: String,
+				path: String,
+				scheme: Scheme
+			): AvailLocation = ProjectRoot(path, scheme, pathRelativeSuffix)
+		},
+
+		/** The path is absolute. */
 		absolute
 		{
 			override fun location(
-				projectDirectory: String,
+				pathRelativeSuffix: String,
 				path: String,
 				scheme: Scheme
-			): ProjectLocation = UserHome(path, scheme)
+			): AvailLocation = UserHome(path, scheme)
 		};
 
 		/**
-		 * Extract a [ProjectLocation] of this type from the provided
+		 * Extract a [AvailLocation] of this type from the provided
 		 * [scheme].
 		 *
-		 * @param projectDirectory
-		 *   The path of the root directory of the project.
+		 * @param pathRelativeSuffix
+		 *   The path suffix relative to the [AvailLocation].
 		 * @param path
 		 *   The already extracted path.
 		 * @param scheme
 		 *   The [JSONObject] to extract the rest of the data from.
 		 */
 		protected abstract fun location (
-			projectDirectory: String,
+			pathRelativeSuffix: String,
 			path: String,
 			scheme: Scheme
-		): ProjectLocation
+		): AvailLocation
 
 		companion object
 		{
@@ -198,24 +253,24 @@ sealed class ProjectLocation constructor(
 				values().map { it.name }.toSet()
 
 			/**
-			 * Read a [ProjectLocation] from the provided JSON.
+			 * Read a [AvailLocation] from the provided JSON.
 			 *
 			 * @param projectDirectory
 			 *   The path of the root directory of the project.
 			 * @param obj
 			 *   The [JSONObject] to read from.
 			 * @return
-			 *   A [ProjectLocation]. If there is a problem reading the value, a
+			 *   A [AvailLocation]. If there is a problem reading the value, a
 			 *   [InvalidLocation] will be answered.
 			 */
 			fun from (
 				projectDirectory: String,
 				obj: JSONObject
-			): ProjectLocation
+			): AvailLocation
 			{
 				val path = try
 				{
-					obj.getString(ProjectLocation::path.name)
+					obj.getString(AvailLocation::path.name)
 				}
 				catch (e: Throwable)
 				{
@@ -228,7 +283,7 @@ sealed class ProjectLocation constructor(
 				}
 				val raw = try
 				{
-					obj.getString(ProjectLocation::locationType.name)
+					obj.getString(AvailLocation::locationType.name)
 				}
 				catch (e: Throwable)
 				{
@@ -238,21 +293,21 @@ sealed class ProjectLocation constructor(
 					e.printStackTrace()
 					return InvalidLocation(
 						path,
-						"missing ${ProjectLocation::locationType.name}")
+						"missing ${AvailLocation::locationType.name}")
 				}
 				if (!validNames.contains(raw))
 				{
 					System.err.println(
 						"Malformed configuration file: $raw is not a " +
-							"valid ${ProjectLocation::locationType.name} value")
+							"valid ${AvailLocation::locationType.name} value")
 					return InvalidLocation(
 						path,
 						"invalid value for " +
-							"${ProjectLocation::locationType.name}: $raw")
+							"${AvailLocation::locationType.name}: $raw")
 				}
 				val scheme = try
 				{
-					Scheme.valueOf(obj.getString(ProjectLocation::scheme.name))
+					Scheme.valueOf(obj.getString(AvailLocation::scheme.name))
 				}
 				catch (e: Throwable)
 				{
@@ -262,7 +317,7 @@ sealed class ProjectLocation constructor(
 					e.printStackTrace()
 					return InvalidLocation(
 						path,
-						"missing ${ProjectLocation::scheme.name}")
+						"missing ${AvailLocation::scheme.name}")
 				}
 				return valueOf(raw).location(projectDirectory, path, scheme)
 			}
@@ -272,25 +327,25 @@ sealed class ProjectLocation constructor(
 	companion object
 	{
 		/**
-		 * Read a [ProjectLocation] from the provided JSON.
+		 * Read a [AvailLocation] from the provided JSON.
 		 *
 		 * @param projectDirectory
 		 *   The path of the root directory of the project.
 		 * @param obj
 		 *   The [JSONObject] to read from.
 		 * @return
-		 *   A [ProjectLocation]. If there is a problem reading the value, a
+		 *   A [AvailLocation]. If there is a problem reading the value, a
 		 *   [InvalidLocation] will be answered.
 		 */
 		fun from (
 			projectDirectory: String,
 			obj: JSONObject
-		): ProjectLocation = LocationType.from(projectDirectory, obj)
+		): AvailLocation = LocationType.from(projectDirectory, obj)
 	}
 }
 
 /**
- * The canonical representation of an invalid [ProjectLocation].
+ * The canonical representation of an invalid [AvailLocation].
  *
  * @author Richard Arriaga
  *
@@ -301,16 +356,16 @@ sealed class ProjectLocation constructor(
  * Construct an [InvalidLocation].
  *
  * @param path
- *   The [ProjectLocation.path].
+ *   The [AvailLocation.path].
  * @param problem
  *   Text explaining the reason the location is invalid.
  */
 class InvalidLocation constructor (
 	path: String,
 	val problem: String
-): ProjectLocation(LocationType.invalid, Scheme.INVALID, path)
+): AvailLocation(LocationType.invalid, Scheme.INVALID, path)
 {
-	override fun fullPath(projectDirectory: String): String = path
+	override val fullPathNoPrefix: String get() = path
 
 	init
 	{
@@ -323,13 +378,71 @@ class InvalidLocation constructor (
  *
  * @author Richard Arriaga
  */
-class UserHome constructor (
+open class UserHome constructor (
+	path: String,
+	scheme: Scheme,
+	locationType: LocationType = LocationType.home
+): AvailLocation(locationType, scheme, path)
+{
+	override val fullPathNoPrefix: String get() =
+		"${System.getProperty("user.home")}/$path"
+}
+
+/**
+ * The location that is path relative to [AvailEnvironment.availHome].
+ *
+ * @author Richard Arriaga
+ */
+open class AvailHome constructor (
+	path: String,
+	scheme: Scheme,
+	locationType: LocationType = LocationType.availHome
+): UserHome(path, scheme, locationType)
+{
+	override val fullPathNoPrefix: String get() =
+		"${AvailEnvironment.availHome}/$path"
+}
+
+/**
+ * The location that is path relative to [AvailEnvironment.availHome].
+ *
+ * @author Richard Arriaga
+ */
+open class AvailLibraries constructor (
 	path: String,
 	scheme: Scheme
-): ProjectLocation(LocationType.home, scheme, path)
+): UserHome(path, scheme, LocationType.availLibraries)
 {
-	override fun fullPath(projectDirectory: String): String =
-		"${scheme.prefix}${System.getProperty("user.home")}/$path"
+	override val fullPathNoPrefix: String get() =
+		"${AvailEnvironment.availHomeLibs}/$path"
+}
+
+/**
+ * The location that is path relative to [AvailEnvironment.availHomeRepos].
+ *
+ * @author Richard Arriaga
+ */
+open class AvailRepositories constructor (
+	path: String,
+	scheme: Scheme
+): UserHome(path, scheme, LocationType.availRepositories)
+{
+	override val fullPathNoPrefix: String get() =
+		"${AvailEnvironment.availHomeRepos}/$path"
+}
+
+/**
+ * The location that is path relative to [AvailEnvironment.availHomeRepos].
+ *
+ * @author Richard Arriaga
+ */
+open class AvailHomeWorkbench constructor (
+	path: String,
+	scheme: Scheme
+): UserHome(path, scheme, LocationType.availHomeWorkbench)
+{
+	override val fullPathNoPrefix: String get() =
+		"${AvailEnvironment.availHomeWorkbench}/$path"
 }
 
 /**
@@ -340,10 +453,9 @@ class UserHome constructor (
 class Absolute constructor (
 	path: String,
 	scheme: Scheme
-): ProjectLocation(LocationType.absolute, scheme, path)
+): AvailLocation(LocationType.absolute, scheme, path)
 {
-	override fun fullPath(projectDirectory: String): String =
-		"${scheme.prefix}$path"
+	override val fullPathNoPrefix: String get() = path
 }
 
 /**
@@ -352,14 +464,37 @@ class Absolute constructor (
  * considered editable by the project.
  *
  * @author Richard Arriaga
+ *
+ * @property projectHome
+ *   The absolute path to the [AvailProject] directory.
  */
-class ProjectHome constructor (
+open class ProjectHome constructor (
 	path: String,
-	scheme: Scheme
-): ProjectLocation(LocationType.project, scheme, path)
+	scheme: Scheme,
+	val projectHome: String,
+	locationType: LocationType = LocationType.project
+): AvailLocation(locationType, scheme, path)
 {
-	override fun fullPath(projectDirectory: String): String =
-		"${scheme.prefix}$projectDirectory/$path"
+	override val fullPathNoPrefix: String get() = "$projectHome/$path"
 
-	override val editable: Boolean = true
+	override val editable: Boolean = scheme != Scheme.JAR
+}
+
+/**
+ * The location that is path relative to the project's home
+ * [AvailProject.ROOTS_DIR].
+ *
+ * @author Richard Arriaga
+ *
+ * @property projectHome
+ *   The absolute path to the [AvailProject] directory.
+ */
+open class ProjectRoot constructor (
+	path: String,
+	scheme: Scheme,
+	projectHome: String
+): ProjectHome(path, scheme, projectHome, LocationType.projectRoots)
+{
+	override val fullPathNoPrefix: String get() =
+		"$projectHome/${AvailProject.ROOTS_DIR}/$path"
 }
