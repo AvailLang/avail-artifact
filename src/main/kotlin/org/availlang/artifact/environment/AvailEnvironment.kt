@@ -90,7 +90,7 @@ object AvailEnvironment
 			}
 			args.isEmpty() ->
 			{
-				File("").absoluteFile.parent
+				File("").absolutePath
 			}
 			else ->
 				throw RuntimeException("")

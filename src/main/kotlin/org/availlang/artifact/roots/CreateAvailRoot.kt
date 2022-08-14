@@ -1,6 +1,6 @@
 package org.availlang.artifact.roots
 
-import org.availlang.artifact.environment.project.AvailLocation
+import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.manifest.AvailRootManifest
 import java.security.MessageDigest
 

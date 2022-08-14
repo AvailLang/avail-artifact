@@ -32,10 +32,12 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.AvailArtifactException
+import org.availlang.artifact.environment.location.AvailLocation
+import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
-import org.availlang.json.JSONWriter
-import java.util.UUID
+import org.availlang.json.jsonPrettyPrintWriter
 
 /**
  * Describes the makeup of an Avail project.
@@ -44,28 +46,43 @@ import java.util.UUID
  * configuration file used for starting up Avail project environments.
  *
  * @author Richard Arriaga
- *
- * @property name
- *   The name of the Avail project.
- * @property darkMode
- *   `true` indicates use of Avail Workbench's dark mode; `false` for light
- *   mode.
- * @property repositoryLocation
- *   The [AvailLocation] for the Avail repository where a persistent Avail
- *   indexed file of compiled modules are stored.
- * @property id
- *   The id that uniquely identifies the project.
- * @property roots
- *   The map of [AvailProjectRoot.name] to [AvailProjectRoot].
  */
-class AvailProject constructor(
-	val name: String,
-	val darkMode: Boolean,
-	val repositoryLocation: AvailLocation,
-	val id: String = UUID.randomUUID().toString(),
-	val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf()
-): JSONFriendly
+interface AvailProject: JSONFriendly
 {
+	/**
+	 * The name of the Avail project.
+	 */
+	val name: String
+
+	/**
+	 * The serialization version of this [AvailProject] which represents the
+	 * structure of the [JSONFriendly]-based configuration file that represents
+	 * this [AvailProject].
+	 */
+	val serializationVersion: Int
+
+	/**
+	 * The [AvailLocation] for the Avail repository where a persistent Avail
+	 * indexed file of compiled modules are stored.
+	 */
+	val repositoryLocation: AvailLocation
+
+	/**
+	 * The id that uniquely identifies the project.
+	 */
+	val id: String
+
+	/**
+	 * `true` indicates use of Avail Workbench's dark mode; `false` for light
+	 *  mode.
+	 */
+	val darkMode: Boolean
+
+	/**
+	 * The map of [AvailProjectRoot.name] to [AvailProjectRoot].
+	 */
+	val roots: MutableMap<String, AvailProjectRoot>
+
 	/**
 	 * The list of [AvailProjectRoot]s in this [AvailProject].
 	 */
@@ -78,6 +95,7 @@ class AvailProject constructor(
 	 * @param availProjectRoot
 	 *   The `AvailProjectRoot` to add.
 	 */
+	@Suppress("unused")
 	fun addRoot (availProjectRoot: AvailProjectRoot)
 	{
 		roots[availProjectRoot.id] = availProjectRoot
@@ -91,53 +109,30 @@ class AvailProject constructor(
 	 * @return
 	 *   The `AvailProjectRoot` removed or `null` if not found.
 	 */
+	@Suppress("unused")
 	fun removeRoot (projectRoot: String): AvailProjectRoot? =
 		roots.remove(projectRoot)
 
-	override fun writeTo(writer: JSONWriter)
-	{
-		writer.writeObject {
-			at(AvailProject::id.name) { write(id) }
-			at(AvailProject::darkMode.name) { write(darkMode) }
-			at(SERIALIZATION_VERSION_JSON_FIELD) {
-				write(CURRENT_SERIALIZATION_VERSION)
-			}
-			at(AvailProject::name.name) { write(name) }
-			at(AvailProject::repositoryLocation.name)
-			{
-				write(repositoryLocation)
-			}
-			at(AvailProject::roots.name)
-			{
-				startArray()
-				availProjectRoots.forEach {
-					startObject()
-					it.writeTo(writer)
-					endObject()
-				}
-				endArray()
-			}
-		}
-	}
+	/**
+	 * The String file contents of this [AvailArtifactManifest].
+	 */
+	val fileContent: String get() =
+		jsonPrettyPrintWriter {
+			this@AvailProject.writeTo(this)
+		}.toString()
 
 	companion object
 	{
 		/**
-		 * The field name of field in the JSON file that contains the version
-		 * of serialization the file was created with.
+		 * The version that represents the current structure under which Avail
+		 * libs are packaged in the artifact.
 		 */
-		const val SERIALIZATION_VERSION_JSON_FIELD = "serializationVersion"
-
-		/**
-		 * The current JSON serialization/deserialization version of
-		 * [AvailProject].
-		 */
-		const val CURRENT_SERIALIZATION_VERSION = 1
+		private const val CURRENT_PROJECT_VERSION = 1
 
 		/**
 		 * The Avail configuration file name.
 		 */
-		const val CONFIG_FILE_NAME = "config/avail-config.json"
+		const val CONFIG_FILE_NAME = "avail-config.json"
 
 		/**
 		 * The name of the directory where the roots are stored for an
@@ -146,61 +141,32 @@ class AvailProject constructor(
 		const val ROOTS_DIR = "roots"
 
 		/**
-		 * Extract and build a [AvailProject] from the provided
-		 * [JSONObject].
+		 * Extract and build a [AvailProject] from the provided [JSONObject].
 		 *
 		 * @param projectDirectory
 		 *   The root directory of the project.
-		 * @param jsonObject
-		 *   The `JSONObject` that contains the `ProjectDescriptor` data.
+		 * @param obj
+		 *   The `JSONObject` that contains the [AvailProject] data.
 		 * @return
-		 *   The extracted `ProjectDescriptor`.
+		 *   The extracted `AvailProject`.
 		 */
 		fun from (
 			projectDirectory: String,
-			jsonObject: JSONObject
+			obj: JSONObject
 		): AvailProject
 		{
-			val id = jsonObject.getString(AvailProject::id.name)
-			val name = jsonObject.getString(AvailProject::name.name)
-			val darkMode =
-				jsonObject.getBoolean(AvailProject::darkMode.name)
-			val repoLocation = AvailLocation.from(
-				projectDirectory,
-				jsonObject.getObject(
-					AvailProject::repositoryLocation.name))
-			val roots = mutableMapOf<String, AvailProjectRoot>()
-			val projectProblems = mutableListOf<ProjectProblem>()
-			jsonObject.getArray(AvailProject::roots.name)
-				.forEachIndexed { i, it ->
-					val rootObj = it as? JSONObject ?: run {
-						projectProblems.add(
-							ConfigFileProblem(
-								"Malformed Avail project config file, " +
-									"$CONFIG_FILE_NAME; malformed " +
-									AvailProject::roots.name +
-									" object at position $i"))
-						return@forEachIndexed
-					}
-					val root =
-						try
-						{
-							AvailProjectRoot.from(projectDirectory, rootObj)
-						}
-						catch (e: Throwable)
-						{
-							projectProblems.add(
-								ConfigFileProblem(
-									"Malformed Avail project config" +
-										" file, $CONFIG_FILE_NAME; malformed " +
-										AvailProject::roots.name +
-										" object at position $i"))
-							return@forEachIndexed
-						}
-					roots[root.id] = root
-				}
-			return AvailProject(
-				name, darkMode, repoLocation, id, roots)
+			val version =
+				obj.getNumber(AvailProject::serializationVersion.name).int
+
+			return when (version)
+			{
+				1 -> AvailProjectV1.from(projectDirectory, obj)
+				else ->
+					throw AvailArtifactException("Invalid Avail Project: " +
+						"Version $version is not in the valid range of " +
+						"known project versions," +
+						" [1, $CURRENT_PROJECT_VERSION].")
+			}
 		}
 	}
 }

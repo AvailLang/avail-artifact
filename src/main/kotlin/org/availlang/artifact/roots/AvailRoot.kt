@@ -32,7 +32,9 @@
 
 package org.availlang.artifact.roots
 
-import org.availlang.artifact.environment.project.AvailLocation
+import org.availlang.artifact.environment.location.AvailLocation
+import org.availlang.artifact.environment.project.AvailProject
+import org.availlang.artifact.environment.project.AvailProjectRoot
 import org.availlang.artifact.manifest.AvailRootManifest
 import java.security.MessageDigest
 
@@ -103,6 +105,7 @@ open class AvailRoot constructor(
 	 *   A lambda that accepts this [AvailRoot] and is executed after all roots have
 	 *   been added.
 	 */
+	@Suppress("unused")
 	constructor(
 		location: AvailLocation,
 		manifestRoot: AvailRootManifest,
@@ -142,21 +145,21 @@ open class AvailRoot constructor(
 			description,
 			digestAlgorithm)
 
-//	/**
-//	 * Create an [AvailRootArtifactTarget] from this [AvailRoot].
-//	 *
-//	 * @param digestAlgorithm
-//	 *   The [MessageDigest] algorithm to use to create the digests for all the
-//	 *   root's contents. This must be a valid algorithm accessible from
-//	 *   [java.security.MessageDigest.getInstance].
-//	 * @return
-//	 *   An [AvailRootArtifactTarget].
-//	 */
-//	@Suppress("unused")
-//	fun availRootArtifactTarget (
-//		digestAlgorithm: String
-//	): AvailRootArtifactTarget =
-//		AvailRootArtifactTarget(uri, manifestRoot(digestAlgorithm))
+	/**
+	 * Create a new [AvailProjectRoot] from this [AvailRoot].
+	 *
+	 * @param projectDirectory
+	 *   The root directory of the [AvailProject].
+	 * @return
+	 *   A new [AvailProjectRoot].
+	 */
+	@Suppress("unused")
+	fun createProjectRoot(projectDirectory: String,): AvailProjectRoot =
+		AvailProjectRoot(
+			projectDirectory,
+			name,
+			location,
+			availModuleExtensions)
 
 	// Module packages always come before modules.
 	override fun compareTo(other: AvailRoot): Int =
@@ -165,7 +168,7 @@ open class AvailRoot constructor(
 			this is CreateAvailRoot && other is CreateAvailRoot ||
 			this !is CreateAvailRoot && other !is CreateAvailRoot ->
 				name.compareTo(other.name)
-			this is CreateAvailRoot && other !is CreateAvailRoot -> 1
+			this is CreateAvailRoot -> 1
 			else ->
 				// Therefore: this !is CreateAvailRoot && other is CreateAvailRoot
 				-1

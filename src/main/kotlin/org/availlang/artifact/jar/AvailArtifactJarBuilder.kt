@@ -5,7 +5,7 @@ import org.availlang.artifact.ArtifactDescriptor.Companion.artifactDescriptorFil
 import org.availlang.artifact.ArtifactDescriptor.Companion.artifactDescriptorFilePath
 import org.availlang.artifact.AvailArtifact.Companion.artifactRootDirectory
 import org.availlang.artifact.AvailArtifact.Companion.availDigestsPathInArtifact
-import org.availlang.artifact.environment.project.Scheme
+import org.availlang.artifact.environment.location.Scheme
 import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.artifact.manifest.AvailArtifactManifest.Companion.availArtifactManifestFile
 import org.availlang.artifact.manifest.AvailArtifactManifest.Companion.manifestFileName

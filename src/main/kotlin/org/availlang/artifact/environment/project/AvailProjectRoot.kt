@@ -1,5 +1,6 @@
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -11,11 +12,14 @@ import java.util.*
  * @author Richard Arriaga
  *
  * @property projectDirectory
- *   The root directory of this project.
+ *   The root directory of the [AvailProject].
  * @property name
  *   The name of the module root.
  * @property location
  *   The [AvailLocation] of this root.
+ * @property availModuleExtensions
+ *   The file extensions that signify files that should be treated as Avail
+ *   modules.
  * @property editable
  *   `true` indicates this root is editable by the project; `false` otherwise.
  * @property id
@@ -23,9 +27,9 @@ import java.util.*
  */
 class AvailProjectRoot constructor(
 	val projectDirectory: String,
-	val scheme: String,
 	var name: String,
 	var location: AvailLocation,
+	val availModuleExtensions: List<String> = listOf("avail"),
 	var editable: Boolean = location.editable,
 	val id: String = UUID.randomUUID().toString()
 ): JSONFriendly
@@ -35,16 +39,21 @@ class AvailProjectRoot constructor(
 	 *
 	 * `"$name=$uri"`
 	 */
-	val modulePath: String = "$name=$scheme${location.fullPath}"
+	@Suppress("unused")
+	val modulePath: String = "$name=${location.fullPath}"
 
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailProjectRoot::scheme.name) { write(scheme) }
 			at(AvailProjectRoot::id.name) { write(id) }
 			at(AvailProjectRoot::name.name) { write(name) }
 			at(AvailProjectRoot::editable.name) { write(editable) }
-			at(AvailProjectRoot::location.name) { write(location) }
+			at(AvailProjectRoot::location.name) {
+				location.writeTo(this@writeObject)
+			}
+			at(AvailProjectRoot::availModuleExtensions.name) {
+				writeStrings(availModuleExtensions)
+			}
 		}
 	}
 
@@ -55,23 +64,23 @@ class AvailProjectRoot constructor(
 		 *
 		 * @param projectDirectory
 		 *   The root directory of this project.
-		 * @param jsonObject
+		 * @param obj
 		 *   The `JSONObject` that contains the `ProjectRoot` data.
 		 * @return
 		 *   The extracted `ProjectRoot`.
 		 */
 		fun from (
 			projectDirectory: String,
-			jsonObject: JSONObject
+			obj: JSONObject
 		): AvailProjectRoot =
 			AvailProjectRoot(
 				projectDirectory,
-				jsonObject.getString(AvailProjectRoot::scheme.name),
-				jsonObject.getString(AvailProjectRoot::name.name),
+				obj.getString(AvailProjectRoot::name.name),
 				AvailLocation.from(
-					jsonObject.getString(AvailProjectRoot::projectDirectory.name),
-					jsonObject.getObject(AvailProjectRoot::location.name)),
-				jsonObject.getBoolean(AvailProjectRoot::editable.name),
-				jsonObject.getString(AvailProjectRoot::id.name))
+					obj.getString(AvailProjectRoot::projectDirectory.name),
+					obj.getObject(AvailProjectRoot::location.name)),
+				obj.getArray(AvailProjectRoot::location.name).strings,
+				obj.getBoolean(AvailProjectRoot::editable.name),
+				obj.getString(AvailProjectRoot::id.name))
 	}
 }
