@@ -116,6 +116,7 @@ interface AvailProject: JSONFriendly
 	/**
 	 * The String file contents of this [AvailArtifactManifest].
 	 */
+	@Suppress("unused")
 	val fileContent: String get() =
 		jsonPrettyPrintWriter {
 			this@AvailProject.writeTo(this)

@@ -77,9 +77,10 @@ class AvailProjectRoot constructor(
 				projectDirectory,
 				obj.getString(AvailProjectRoot::name.name),
 				AvailLocation.from(
-					obj.getString(AvailProjectRoot::projectDirectory.name),
+					projectDirectory,
 					obj.getObject(AvailProjectRoot::location.name)),
-				obj.getArray(AvailProjectRoot::location.name).strings,
+				obj.getArray(
+					AvailProjectRoot::availModuleExtensions.name).strings,
 				obj.getBoolean(AvailProjectRoot::editable.name),
 				obj.getString(AvailProjectRoot::id.name))
 	}

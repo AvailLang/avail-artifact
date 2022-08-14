@@ -28,7 +28,7 @@ sealed class AvailLocation constructor(
 	/**
 	 * Answer the full path to the location.
 	 */
-	val fullPath: String get() = "${scheme.prefix}$fullPathNoPrefix"
+	val fullPath: String get() = "${scheme.optionalPrefix}$fullPathNoPrefix"
 
 	/**
 	 * Answer the full path to the location.

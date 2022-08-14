@@ -1,7 +1,7 @@
 package org.availlang.artifact.environment.location
 
 /**
- * The supported [URI.scheme]s.
+ * The supported URI schemes.
  *
  * @author Richard Arriaga
  */
@@ -15,10 +15,15 @@ enum class Scheme constructor(val prefix: String)
 	/**
 	 * A file location.
 	 */
-	FILE("file://"),
+	FILE("file://")
+	{
+		override val optionalPrefix: String = ""
+	},
 
 	/**
 	 * A JAR file.
 	 */
-	JAR("jar:/")
-}
+	JAR("jar:/");
+
+	open val optionalPrefix: String get() = prefix
+ }
