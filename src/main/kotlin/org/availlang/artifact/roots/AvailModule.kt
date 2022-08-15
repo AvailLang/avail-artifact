@@ -112,7 +112,7 @@ open class AvailModule constructor(
 	 */
 	internal open fun create (directory: String)
 	{
-		val module = File("$directory${File.pathSeparator}$fileName")
+		val module = File("$directory${File.separator}$fileName")
 		if (!module.exists())
 		{
 			File(directory).mkdirs()

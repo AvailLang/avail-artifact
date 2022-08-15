@@ -30,7 +30,7 @@ class ProjectHome constructor (
 ): AvailLocation(LocationType.project, scheme, path)
 {
 	override val fullPathNoPrefix: String get() =
-		"$projectHome${File.pathSeparator}$path"
+		"$projectHome${File.separator}$path"
 
 	override val editable: Boolean = scheme != Scheme.JAR
 
@@ -40,5 +40,5 @@ class ProjectHome constructor (
 		locationType: LocationType
 	): AvailLocation =
 		ProjectHome(
-			"$path${File.pathSeparator}$relativePath", scheme, projectHome)
+			"$path${File.separator}$relativePath", scheme, projectHome)
 }

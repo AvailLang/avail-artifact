@@ -62,9 +62,9 @@ class AvailModulePackage constructor(
 	override fun create (directory: String)
 	{
 		File(directory).mkdirs()
-		val modulePackage = "$directory${File.pathSeparator}$fileName"
+		val modulePackage = "$directory${File.separator}$fileName"
 		File(modulePackage).mkdirs()
-		val module = File("$modulePackage${File.pathSeparator}$fileName")
+		val module = File("$modulePackage${File.separator}$fileName")
 		if (!module.exists())
 		{
 			module.writeText(fileContents)

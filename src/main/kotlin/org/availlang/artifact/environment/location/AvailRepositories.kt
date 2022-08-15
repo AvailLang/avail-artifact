@@ -23,7 +23,7 @@ class AvailRepositories constructor (
 ): AvailHome(path, scheme, LocationType.availRepositories)
 {
 	override val fullPathNoPrefix: String get() =
-		"${AvailEnvironment.availHomeRepos}${File.pathSeparator}$path"
+		"${AvailEnvironment.availHomeRepos}${File.separator}$path"
 
 	override fun relativeLocation(
 		relativePath: String,
@@ -31,5 +31,5 @@ class AvailRepositories constructor (
 		locationType: LocationType
 	): AvailLocation =
 		AvailRepositories(
-			"$path${File.pathSeparator}$relativePath", scheme)
+			"$path${File.separator}$relativePath", scheme)
 }

@@ -65,6 +65,8 @@ abstract class AvailLocation constructor(
 		}
 	}
 
+
+
 	override fun equals(other: Any?): Boolean
 	{
 		if (this === other) return true
@@ -79,6 +81,8 @@ abstract class AvailLocation constructor(
 	{
 		return path.hashCode()
 	}
+
+	override fun toString(): String = fullPath
 
 	/**
 	 * The acceptable path location types.

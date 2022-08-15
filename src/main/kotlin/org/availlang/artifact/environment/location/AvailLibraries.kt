@@ -23,12 +23,12 @@ open class AvailLibraries constructor (
 ): AvailHome(path, scheme, LocationType.availLibraries)
 {
 	override val fullPathNoPrefix: String get() =
-		"${AvailEnvironment.availHomeLibs}${File.pathSeparator}$path"
+		"${AvailEnvironment.availHomeLibs}${File.separator}$path"
 
 	override fun relativeLocation(
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation =
-		AvailLibraries("$path${File.pathSeparator}$relativePath", scheme)
+		AvailLibraries("$path${File.separator}$relativePath", scheme)
 }

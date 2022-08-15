@@ -57,6 +57,8 @@ class AvailProjectRoot constructor(
 		}
 	}
 
+	override fun toString(): String = modulePath
+
 	companion object
 	{
 		/**

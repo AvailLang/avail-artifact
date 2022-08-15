@@ -29,6 +29,6 @@ class Absolute constructor (
 		locationType: LocationType
 	): AvailLocation =
 		Absolute(
-			"$path${File.pathSeparator}$relativePath", scheme)
+			"$path${File.separator}$relativePath", scheme)
 
 }

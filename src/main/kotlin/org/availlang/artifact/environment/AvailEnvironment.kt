@@ -15,7 +15,7 @@ object AvailEnvironment
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
 	val availHome: String get() =
-		"${System.getProperty("user.home")}${File.pathSeparator}.avail"
+		"${System.getProperty("user.home")}${File.separator}.avail"
 
 	/**
 	 * The repositories directory inside the [Avail home directory][availHome]
@@ -24,7 +24,7 @@ object AvailEnvironment
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
 	val availHomeRepos: String get() =
-		"$availHome${File.pathSeparator}repositories"
+		"$availHome${File.separator}repositories"
 
 	/**
 	 * The libraries directory inside the [Avail home directory][availHome]
@@ -32,7 +32,7 @@ object AvailEnvironment
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
 	val availHomeLibs: String get() =
-		"$availHome${File.pathSeparator}libraries"
+		"$availHome${File.separator}libraries"
 
 	/**
 	 * The workbench directory inside the [Avail home directory][availHome]
@@ -40,7 +40,7 @@ object AvailEnvironment
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
 	val availHomeWorkbench: String get() =
-		"$availHome${File.pathSeparator}workbench"
+		"$availHome${File.separator}workbench"
 
 	/**
 	 * Add the

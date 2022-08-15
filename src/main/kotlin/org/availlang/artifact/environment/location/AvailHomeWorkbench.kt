@@ -23,7 +23,7 @@ class AvailHomeWorkbench constructor (
 ): AvailHome(path, scheme, )
 {
 	override val fullPathNoPrefix: String get() =
-		"${AvailEnvironment.availHomeWorkbench}${File.pathSeparator}$path"
+		"${AvailEnvironment.availHomeWorkbench}${File.separator}$path"
 
 	override fun relativeLocation(
 		relativePath: String,
@@ -31,5 +31,5 @@ class AvailHomeWorkbench constructor (
 		locationType: LocationType
 	): AvailLocation =
 		AvailHomeWorkbench(
-			"$path${File.pathSeparator}$relativePath", scheme)
+			"$path${File.separator}$relativePath", scheme)
 }

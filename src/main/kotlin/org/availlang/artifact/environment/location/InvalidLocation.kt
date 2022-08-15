@@ -30,5 +30,5 @@ class InvalidLocation constructor (
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation = InvalidLocation(
-		"$path${File.pathSeparator}$relativePath", problem)
+		"$path${File.separator}$relativePath", problem)
 }
