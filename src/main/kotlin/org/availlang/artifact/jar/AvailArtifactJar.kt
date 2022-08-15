@@ -133,8 +133,8 @@ class AvailArtifactJar constructor(
 	 * @throws AvailArtifactException
 	 *   If the target file is not retrievable.
 	 */
-	@Suppress("MemberVisibilityCanBePrivate")
-	fun extractRooteFile (rootName: String, filePath: String): ByteArray =
+	@Suppress("unused")
+	fun extractRootFile (rootName: String, filePath: String): ByteArray =
 		extractFile("${AvailArtifact.artifactRootDirectory}/$rootName/" +
 			"${AvailArtifact.availSourcesPathInArtifact}/$filePath")
 
