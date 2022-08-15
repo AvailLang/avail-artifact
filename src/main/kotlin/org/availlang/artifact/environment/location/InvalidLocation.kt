@@ -1,5 +1,7 @@
 package org.availlang.artifact.environment.location
 
+import java.io.File
+
 /**
  * The canonical representation of an invalid [AvailLocation].
  *
@@ -27,5 +29,6 @@ class InvalidLocation constructor (
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
-	): AvailLocation = InvalidLocation("$path/$relativePath", problem)
+	): AvailLocation = InvalidLocation(
+		"$path${File.pathSeparator}$relativePath", problem)
 }

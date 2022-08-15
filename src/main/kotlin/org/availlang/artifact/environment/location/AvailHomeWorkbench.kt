@@ -1,6 +1,7 @@
 package org.availlang.artifact.environment.location
 
 import org.availlang.artifact.environment.AvailEnvironment
+import java.io.File
 
 /**
  * The [AvailHome] location that is path relative to
@@ -22,12 +23,13 @@ class AvailHomeWorkbench constructor (
 ): AvailHome(path, scheme, )
 {
 	override val fullPathNoPrefix: String get() =
-		"${AvailEnvironment.availHomeWorkbench}/$path"
+		"${AvailEnvironment.availHomeWorkbench}${File.pathSeparator}$path"
 
 	override fun relativeLocation(
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation =
-		AvailHomeWorkbench("$path/$relativePath", scheme)
+		AvailHomeWorkbench(
+			"$path${File.pathSeparator}$relativePath", scheme)
 }

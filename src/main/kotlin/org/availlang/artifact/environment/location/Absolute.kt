@@ -1,5 +1,7 @@
 package org.availlang.artifact.environment.location
 
+import java.io.File
+
 /**
  * The [AvailLocation] that is supplied as an absolute path.
  *
@@ -26,6 +28,7 @@ class Absolute constructor (
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation =
-		Absolute("$path/$relativePath", scheme)
+		Absolute(
+			"$path${File.pathSeparator}$relativePath", scheme)
 
 }

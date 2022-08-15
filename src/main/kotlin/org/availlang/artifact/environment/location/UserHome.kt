@@ -1,6 +1,7 @@
 package org.availlang.artifact.environment.location
 
 import org.availlang.artifact.environment.location.AvailLocation.LocationType
+import java.io.File
 
 /**
  * The [AvailLocation] that is path relative to the user's home directory.
@@ -24,12 +25,13 @@ open class UserHome constructor (
 ): AvailLocation(locationType, scheme, path)
 {
 	override val fullPathNoPrefix: String get() =
-		"${System.getProperty("user.home")}/$path"
+		"${System.getProperty("user.home")}${File.pathSeparator}$path"
 
 	override fun relativeLocation(
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation =
-		UserHome("$path/$relativePath", scheme, locationType)
+		UserHome(
+			"$path${File.pathSeparator}$relativePath", scheme, locationType)
 }

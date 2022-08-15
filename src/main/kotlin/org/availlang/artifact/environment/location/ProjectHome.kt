@@ -1,6 +1,7 @@
 package org.availlang.artifact.environment.location
 
 import org.availlang.artifact.environment.project.AvailProject
+import java.io.File
 
 /**
  * The [AvailLocation] that is path relative to the project's home directory. By
@@ -28,7 +29,8 @@ class ProjectHome constructor (
 	val projectHome: String
 ): AvailLocation(LocationType.project, scheme, path)
 {
-	override val fullPathNoPrefix: String get() = "$projectHome/$path"
+	override val fullPathNoPrefix: String get() =
+		"$projectHome${File.pathSeparator}$path"
 
 	override val editable: Boolean = scheme != Scheme.JAR
 
@@ -37,5 +39,6 @@ class ProjectHome constructor (
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation =
-		ProjectHome("$path/$relativePath", scheme, projectHome)
+		ProjectHome(
+			"$path${File.pathSeparator}$relativePath", scheme, projectHome)
 }
