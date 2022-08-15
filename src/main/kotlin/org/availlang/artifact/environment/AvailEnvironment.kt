@@ -72,27 +72,20 @@ object AvailEnvironment
 
 	/**
 	 * Answer the root directory path of the Avail project from the provided
-	 * string argument array. If the arguments are empty, presume this
+	 * string argument array. If the arguments are empty, presume this is being
+	 * run from the Avail project home.
 	 *
+	 * @param location
+	 *   The relative string path to the Avail project home.
+	 * @return
+	 *   The absolute path to the Avail project home.
 	 */
 	@Suppress("unused")
-	fun getProjectRootDirectory (args: Array<String>): String =
-		when
-		{
-			args.size == 1 ->
+	fun getProjectRootDirectory (location: String): String =
+		File(location).apply {
+			if (!isDirectory)
 			{
-				File(args[0]).apply {
-					if (!isDirectory)
-					{
-						throw RuntimeException("")
-					}
-				}.absolutePath
-			}
-			args.isEmpty() ->
-			{
-				File("").absolutePath
-			}
-			else ->
 				throw RuntimeException("")
-		}
+			}
+		}.absolutePath
 }
