@@ -23,8 +23,9 @@ class InvalidLocation constructor (
 {
 	override val fullPathNoPrefix: String get() = path
 
-	init
-	{
-		// TODO establish a logs file
-	}
+	override fun relativeLocation(
+		relativePath: String,
+		scheme: Scheme,
+		locationType: LocationType
+	): AvailLocation = InvalidLocation("$path/$relativePath", problem)
 }

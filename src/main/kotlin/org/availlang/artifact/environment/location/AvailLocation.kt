@@ -1,7 +1,6 @@
 package org.availlang.artifact.environment.location
 
 import org.availlang.artifact.environment.AvailEnvironment
-import org.availlang.artifact.environment.project.AvailProject
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -19,7 +18,7 @@ import org.availlang.json.JSONWriter
  * @property path
  *   The path to this location.
  */
-sealed class AvailLocation constructor(
+abstract class AvailLocation constructor(
 	val locationType: LocationType,
 	val scheme: Scheme,
 	val path: String
@@ -40,6 +39,22 @@ sealed class AvailLocation constructor(
 	 * indicates it is; `false` otherwise.
 	 */
 	open val editable: Boolean = false
+
+	/**
+	 * Create a new [AvailLocation] relative to this one.
+	 *
+	 * @param relativePath
+	 *   The extended path relative to this location's [path].
+	 * @param scheme
+	 *   The [Scheme] of the referenced location.
+	 * @param locationType
+	 *   The [LocationType] of the new location.
+	 */
+	abstract fun relativeLocation (
+		relativePath: String,
+		scheme: Scheme,
+		locationType: LocationType
+	): AvailLocation
 
 	override fun writeTo(writer: JSONWriter)
 	{
@@ -150,16 +165,6 @@ sealed class AvailLocation constructor(
 				path: String,
 				scheme: Scheme
 			): AvailLocation = ProjectHome(path, scheme, pathRelativeSuffix)
-		},
-
-		/** The path is relative to [AvailProject.ROOTS_DIR]. */
-		projectRoots
-		{
-			override fun location(
-				pathRelativeSuffix: String,
-				path: String,
-				scheme: Scheme
-			): AvailLocation = ProjectRoot(path, scheme, pathRelativeSuffix)
 		},
 
 		/** The path is absolute. */

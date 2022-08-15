@@ -1,6 +1,5 @@
 package org.availlang.artifact.environment.location
 
-import org.availlang.artifact.environment.location.AvailLocation.LocationType
 import org.availlang.artifact.environment.project.AvailProject
 
 /**
@@ -22,17 +21,21 @@ import org.availlang.artifact.environment.project.AvailProject
  *   The [Scheme] of the location.
  * @param projectHome
  *   The absolute path to the [AvailProject] directory.
- * @param locationType
- *   The [LocationType] of this location.
  */
-open class ProjectHome constructor (
+class ProjectHome constructor (
 	path: String,
 	scheme: Scheme,
-	val projectHome: String,
-	locationType: LocationType = LocationType.project
-): AvailLocation(locationType, scheme, path)
+	val projectHome: String
+): AvailLocation(LocationType.project, scheme, path)
 {
 	override val fullPathNoPrefix: String get() = "$projectHome/$path"
 
 	override val editable: Boolean = scheme != Scheme.JAR
+
+	override fun relativeLocation(
+		relativePath: String,
+		scheme: Scheme,
+		locationType: LocationType
+	): AvailLocation =
+		ProjectHome("$path/$relativePath", scheme, projectHome)
 }

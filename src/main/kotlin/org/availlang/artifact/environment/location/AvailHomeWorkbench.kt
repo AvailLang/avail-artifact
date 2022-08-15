@@ -19,8 +19,15 @@ import org.availlang.artifact.environment.AvailEnvironment
 class AvailHomeWorkbench constructor (
 	path: String = "",
 	scheme: Scheme = Scheme.FILE
-): AvailHome(path, scheme, LocationType.availHomeWorkbench)
+): AvailHome(path, scheme, )
 {
 	override val fullPathNoPrefix: String get() =
 		"${AvailEnvironment.availHomeWorkbench}/$path"
+
+	override fun relativeLocation(
+		relativePath: String,
+		scheme: Scheme,
+		locationType: LocationType
+	): AvailLocation =
+		AvailHomeWorkbench("$path/$relativePath", scheme)
 }

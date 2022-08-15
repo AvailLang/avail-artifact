@@ -15,7 +15,7 @@ enum class Scheme constructor(val prefix: String)
 	/**
 	 * A file location.
 	 */
-	FILE("file://")
+	FILE("file:/")
 	{
 		override val optionalPrefix: String = ""
 	},
@@ -23,7 +23,7 @@ enum class Scheme constructor(val prefix: String)
 	/**
 	 * A JAR file.
 	 */
-	JAR("jar:/");
+	JAR("jar:");
 
 	open val optionalPrefix: String get() = prefix
  }

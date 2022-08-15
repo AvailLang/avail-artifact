@@ -25,4 +25,11 @@ open class UserHome constructor (
 {
 	override val fullPathNoPrefix: String get() =
 		"${System.getProperty("user.home")}/$path"
+
+	override fun relativeLocation(
+		relativePath: String,
+		scheme: Scheme,
+		locationType: LocationType
+	): AvailLocation =
+		UserHome("$path/$relativePath", scheme, locationType)
 }

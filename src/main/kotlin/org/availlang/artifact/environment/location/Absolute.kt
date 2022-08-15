@@ -20,4 +20,12 @@ class Absolute constructor (
 ): AvailLocation(LocationType.absolute, scheme, path)
 {
 	override val fullPathNoPrefix: String get() = path
+
+	override fun relativeLocation(
+		relativePath: String,
+		scheme: Scheme,
+		locationType: LocationType
+	): AvailLocation =
+		Absolute("$path/$relativePath", scheme)
+
 }

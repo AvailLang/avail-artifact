@@ -154,7 +154,7 @@ open class AvailRoot constructor(
 	 *   A new [AvailProjectRoot].
 	 */
 	@Suppress("unused")
-	fun createProjectRoot(projectDirectory: String,): AvailProjectRoot =
+	fun createProjectRoot(projectDirectory: String): AvailProjectRoot =
 		AvailProjectRoot(
 			projectDirectory,
 			name,
