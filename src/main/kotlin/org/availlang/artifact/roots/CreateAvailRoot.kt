@@ -25,6 +25,9 @@ import java.security.MessageDigest
  *   modules.
  * @param entryPoints
  *   The Avail entry points exposed by this root.
+ * @param templates
+ *   The templates that should be available when editing Avail source
+ *   modules in the workbench.
  * @param description
  *   An optional description of the root.
  * @param action
@@ -37,6 +40,7 @@ class CreateAvailRoot constructor(
 	digestAlgorithm: String = "SHA-256",
 	availModuleExtensions: List<String> = listOf("avail"),
 	entryPoints: List<String> = listOf(),
+	templates: Map<String, String> = mapOf(),
 	description: String = "",
 	action: (AvailRoot) -> Unit = {}
 ) : AvailRoot(
@@ -45,6 +49,7 @@ class CreateAvailRoot constructor(
 	digestAlgorithm,
 	availModuleExtensions,
 	entryPoints,
+	templates,
 	description,
 	action)
 {
@@ -69,6 +74,7 @@ class CreateAvailRoot constructor(
 		manifestRoot.digestAlgorithm,
 		manifestRoot.availModuleExtensions,
 		manifestRoot.entryPoints,
+		manifestRoot.templates,
 		manifestRoot.description,
 		action)
 

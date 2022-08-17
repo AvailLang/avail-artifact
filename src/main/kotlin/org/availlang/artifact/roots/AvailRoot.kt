@@ -56,6 +56,9 @@ import java.security.MessageDigest
  *   modules.
  * @property entryPoints
  *   The Avail entry points exposed by this root.
+ * @property templates
+ *   The templates that should be available when editing Avail source
+ *   modules in the workbench.
  * @property description
  *   An optional description of the root.
  * @property action
@@ -78,6 +81,9 @@ import java.security.MessageDigest
  *   modules.
  * @param entryPoints
  *   The Avail entry points exposed by this root.
+ * @param templates
+ *   The templates that should be available when editing Avail source
+ *   modules in the workbench.
  * @param description
  *   An optional description of the root.
  * @param action
@@ -90,6 +96,7 @@ open class AvailRoot constructor(
 	val digestAlgorithm: String = "SHA-256",
 	val availModuleExtensions: List<String> = listOf("avail"),
 	val entryPoints: List<String> = listOf(),
+	val templates: Map<String, String> = mapOf(),
 	val description: String = "",
 	var action: (AvailRoot) -> Unit = {}
 ) : Comparable<AvailRoot>
@@ -116,6 +123,7 @@ open class AvailRoot constructor(
 		manifestRoot.digestAlgorithm,
 		manifestRoot.availModuleExtensions,
 		manifestRoot.entryPoints,
+		manifestRoot.templates,
 		manifestRoot.description,
 		action)
 
@@ -142,6 +150,7 @@ open class AvailRoot constructor(
 			name,
 			availModuleExtensions,
 			entryPoints,
+			templates,
 			description,
 			digestAlgorithm)
 
@@ -159,7 +168,8 @@ open class AvailRoot constructor(
 			projectDirectory,
 			name,
 			location,
-			availModuleExtensions)
+			availModuleExtensions,
+			templates)
 
 	// Module packages always come before modules.
 	override fun compareTo(other: AvailRoot): Int =

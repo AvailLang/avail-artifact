@@ -56,15 +56,19 @@ import java.util.UUID
  *   indexed file of compiled modules are stored.
  * @param id
  *   The id that uniquely identifies the project.
- * @property roots
+ * @param roots
  *   The map of [AvailProjectRoot.name] to [AvailProjectRoot].
+ * @param templates
+ *   The templates that should be available when editing Avail source modules
+ *   in the workbench.
  */
 class AvailProjectV1 constructor(
 	override val name: String,
 	override val darkMode: Boolean,
 	override val repositoryLocation: AvailLocation,
 	override val id: String = UUID.randomUUID().toString(),
-	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf()
+	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf(),
+	override val templates: Map<String, String> = mutableMapOf()
 ): AvailProject
 {
 	override val serializationVersion: Int = 1
@@ -78,17 +82,19 @@ class AvailProjectV1 constructor(
 				write(serializationVersion)
 			}
 			at(AvailProjectV1::name.name) { write(name) }
-			at(AvailProjectV1::repositoryLocation.name)
-			{
+			at(AvailProjectV1::repositoryLocation.name) {
 				write(repositoryLocation)
 			}
-			at(AvailProjectV1::roots.name)
+			at(AvailProjectV1::roots.name) { writeArray(availProjectRoots) }
+			if (templates.isNotEmpty())
 			{
-				startArray()
-				availProjectRoots.forEach {
-					it.writeTo(writer)
+				at(AvailProjectV1::templates.name) {
+					writeObject {
+						templates.forEach { (name, expansion) ->
+							at(name) { write(expansion) }
+						}
+					}
 				}
-				endArray()
 			}
 		}
 	}
@@ -120,6 +126,7 @@ class AvailProjectV1 constructor(
 				jsonObject.getObject(
 					AvailProjectV1::repositoryLocation.name))
 			val roots = mutableMapOf<String, AvailProjectRoot>()
+			val templates = mutableMapOf<String, String>()
 			val projectProblems = mutableListOf<ProjectProblem>()
 			jsonObject.getArray(AvailProjectV1::roots.name)
 				.forEachIndexed { i, it ->
@@ -149,6 +156,13 @@ class AvailProjectV1 constructor(
 						}
 					roots[root.id] = root
 				}
+			if (jsonObject.containsKey(AvailProjectV1::templates.name))
+			{
+				val map = jsonObject.getObject(AvailProjectV1::templates.name)
+				map.forEach { (name, expansion) ->
+					templates[name] = expansion.string
+				}
+			}
 			return AvailProjectV1(name, darkMode, repoLocation, id, roots)
 		}
 	}

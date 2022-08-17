@@ -20,6 +20,9 @@ import java.util.*
  * @property availModuleExtensions
  *   The file extensions that signify files that should be treated as Avail
  *   modules.
+ * @property templates
+ *   The templates that should be available when editing Avail source
+ *   modules in the workbench.
  * @property editable
  *   `true` indicates this root is editable by the project; `false` otherwise.
  * @property id
@@ -30,6 +33,7 @@ class AvailProjectRoot constructor(
 	var name: String,
 	var location: AvailLocation,
 	val availModuleExtensions: List<String> = listOf("avail"),
+	val templates: Map<String, String> = mapOf(),
 	var editable: Boolean = location.editable,
 	val id: String = UUID.randomUUID().toString()
 ): JSONFriendly
@@ -53,6 +57,16 @@ class AvailProjectRoot constructor(
 			}
 			at(AvailProjectRoot::availModuleExtensions.name) {
 				writeStrings(availModuleExtensions)
+			}
+			if (templates.isNotEmpty())
+			{
+				at(AvailProjectRoot::templates.name) {
+					writeObject {
+						templates.forEach { (name, expansion) ->
+							at(name) { write(expansion) }
+						}
+					}
+				}
 			}
 		}
 	}
@@ -83,6 +97,19 @@ class AvailProjectRoot constructor(
 					obj.getObject(AvailProjectRoot::location.name)),
 				obj.getArray(
 					AvailProjectRoot::availModuleExtensions.name).strings,
+				run {
+					if (obj.containsKey(AvailProjectRoot::templates.name))
+					{
+						val templates = mutableMapOf<String, String>()
+						val map = obj.getObject(
+							AvailProjectRoot::templates.name)
+						map.forEach { (name, expansion) ->
+							templates[name] = expansion.string
+						}
+						templates
+					}
+					else mapOf<String, String>()
+				},
 				obj.getBoolean(AvailProjectRoot::editable.name),
 				obj.getString(AvailProjectRoot::id.name))
 	}

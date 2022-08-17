@@ -19,6 +19,9 @@ import java.security.MessageDigest
  *   modules.
  * @property entryPoints
  *   The Avail entry points exposed by this root.
+ * @property templates
+ *   The templates that should be available when editing Avail source
+ *   modules in the workbench.
  * @property description
  *   A description of the root.
  * @property digestAlgorithm
@@ -30,6 +33,7 @@ data class AvailRootManifest constructor(
 	val name: String,
 	val availModuleExtensions: List<String>,
 	val entryPoints: List<String> = listOf(),
+	val templates: Map<String, String> = mapOf(),
 	val description: String = "",
 	val digestAlgorithm: String = "SHA-256"
 ): JSONFriendly
@@ -37,25 +41,23 @@ data class AvailRootManifest constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailRootManifest::name.name)
-			{
-				write(name)
-			}
-			at(AvailRootManifest::description.name)
-			{
-				write(description)
-			}
-			at(AvailRootManifest::digestAlgorithm.name)
-			{
+			at(AvailRootManifest::name.name) { write(name) }
+			at(AvailRootManifest::description.name) { write(description) }
+			at(AvailRootManifest::digestAlgorithm.name) {
 				write(digestAlgorithm)
 			}
-			at(AvailRootManifest::availModuleExtensions.name)
-			{
+			at(AvailRootManifest::availModuleExtensions.name) {
 				writeStrings(availModuleExtensions)
 			}
-			at(AvailRootManifest::entryPoints.name)
-			{
+			at(AvailRootManifest::entryPoints.name) {
 				writeStrings(entryPoints)
+			}
+			at(AvailRootManifest::templates.name) {
+				writeObject {
+					templates.forEach { (name, expansion) ->
+						at(name) { write(expansion) }
+					}
+				}
 			}
 		}
 	}
@@ -119,6 +121,29 @@ data class AvailRootManifest constructor(
 				{
 					throw AvailArtifactException(
 						"Problem extracting Avail Manifest Root entry points.",
+						e)
+				}
+			val templates =
+				try
+				{
+					val key = AvailRootManifest::templates.name
+					if (obj.containsKey(key))
+					{
+						val map = obj.getObject(key)
+						val templates = mutableMapOf<String, String>()
+						map.forEach { (name, expansion) ->
+							templates[name] = expansion.string
+						}
+					}
+					else
+					{
+						mapOf<String, String>()
+					}
+				}
+				catch (e: Throwable)
+				{
+					throw AvailArtifactException(
+						"Problem extracting Avail Manifest Root templates.",
 						e)
 				}
 			return AvailRootManifest(name, extensions, entryPoints)

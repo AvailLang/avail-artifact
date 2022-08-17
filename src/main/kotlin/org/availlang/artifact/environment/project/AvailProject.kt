@@ -84,6 +84,14 @@ interface AvailProject: JSONFriendly
 	val roots: MutableMap<String, AvailProjectRoot>
 
 	/**
+	 * The templates that should be available when editing Avail source modules
+	 * in the workbench, as a map from template names (corresponding to user
+	 * inputs) to template expansions. Zero or one caret insertion (⁁) may
+	 * appear in each expansion.
+	 */
+	val templates: Map<String, String>
+
+	/**
 	 * The list of [AvailProjectRoot]s in this [AvailProject].
 	 */
 	val availProjectRoots: List<AvailProjectRoot> get() =
@@ -139,6 +147,7 @@ interface AvailProject: JSONFriendly
 		 * The name of the directory where the roots are stored for an
 		 * [AvailProject].
 		 */
+		@Suppress("unused")
 		const val ROOTS_DIR = "roots"
 
 		/**
