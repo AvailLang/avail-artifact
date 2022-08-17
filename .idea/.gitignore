@@ -14,3 +14,7 @@ jarRepositories.xml
 /compiler.xml
 /**/*.iml
 /misc.xml
+
+/kotlinc.xml
+/uiDesigner.xml
+gradle.xml
