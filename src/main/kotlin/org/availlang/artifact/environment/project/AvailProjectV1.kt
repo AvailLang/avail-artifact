@@ -68,7 +68,8 @@ class AvailProjectV1 constructor(
 	override val repositoryLocation: AvailLocation,
 	override val id: String = UUID.randomUUID().toString(),
 	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf(),
-	override val templates: Map<String, String> = mutableMapOf()
+	override val templates: Map<String, String> = mutableMapOf(),
+	override var projectCopyright: String = ""
 ): AvailProject
 {
 	override val serializationVersion: Int = 1
@@ -95,6 +96,9 @@ class AvailProjectV1 constructor(
 						}
 					}
 				}
+			}
+			at(AvailProjectV1::projectCopyright.name) {
+				write(projectCopyright)
 			}
 		}
 	}
@@ -163,7 +167,19 @@ class AvailProjectV1 constructor(
 					templates[name] = expansion.string
 				}
 			}
-			return AvailProjectV1(name, darkMode, repoLocation, id, roots)
+			val copyright =
+				if (jsonObject.containsKey(AvailProjectV1::projectCopyright.name))
+				{
+					jsonObject.getString(AvailProjectV1::projectCopyright.name)
+				}
+				else ""
+			return AvailProjectV1(
+				name,
+				darkMode,
+				repoLocation,
+				id,
+				roots,
+				projectCopyright = copyright)
 		}
 	}
 }

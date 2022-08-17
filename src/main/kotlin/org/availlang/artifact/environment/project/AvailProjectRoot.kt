@@ -27,6 +27,11 @@ import java.util.*
  *   `true` indicates this root is editable by the project; `false` otherwise.
  * @property id
  *   The immutable id that uniquely identifies this [AvailProjectRoot].
+ * @property rootCopyright
+ *   The copyright to prepend to new Avail modules in this root.
+ * @property visible
+ *   `true` indicates the root is intended to be displayed; `false` indciates
+ *   the root should not be visible by default.
  */
 class AvailProjectRoot constructor(
 	val projectDirectory: String,
@@ -35,7 +40,9 @@ class AvailProjectRoot constructor(
 	val availModuleExtensions: List<String> = listOf("avail"),
 	val templates: Map<String, String> = mapOf(),
 	var editable: Boolean = location.editable,
-	val id: String = UUID.randomUUID().toString()
+	val id: String = UUID.randomUUID().toString(),
+	var rootCopyright: String = "",
+	var visible: Boolean = true,
 ): JSONFriendly
 {
 	/**
@@ -52,6 +59,7 @@ class AvailProjectRoot constructor(
 			at(AvailProjectRoot::id.name) { write(id) }
 			at(AvailProjectRoot::name.name) { write(name) }
 			at(AvailProjectRoot::editable.name) { write(editable) }
+			at(AvailProjectRoot::visible.name) { write(visible) }
 			at(AvailProjectRoot::location.name) {
 				location.writeTo(this@writeObject)
 			}
@@ -68,6 +76,7 @@ class AvailProjectRoot constructor(
 					}
 				}
 			}
+			at(AvailProjectRoot::rootCopyright.name) { write(rootCopyright) }
 		}
 	}
 
@@ -111,6 +120,12 @@ class AvailProjectRoot constructor(
 					else mapOf<String, String>()
 				},
 				obj.getBoolean(AvailProjectRoot::editable.name),
-				obj.getString(AvailProjectRoot::id.name))
+				obj.getString(AvailProjectRoot::id.name),
+				if (obj.containsKey(AvailProjectRoot::rootCopyright.name))
+				{
+					obj.getString(AvailProjectRoot::rootCopyright.name)
+				}
+				else "",
+				obj.getBoolean(AvailProjectRoot::visible.name),)
 	}
 }

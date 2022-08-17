@@ -92,6 +92,11 @@ interface AvailProject: JSONFriendly
 	val templates: Map<String, String>
 
 	/**
+	 * The copyright to prepend to new Avail modules by default.
+	 */
+	var projectCopyright: String
+
+	/**
 	 * The list of [AvailProjectRoot]s in this [AvailProject].
 	 */
 	val availProjectRoots: List<AvailProjectRoot> get() =
