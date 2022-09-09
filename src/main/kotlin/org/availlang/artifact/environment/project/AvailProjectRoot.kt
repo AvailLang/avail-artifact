@@ -126,7 +126,7 @@ class AvailProjectRoot constructor(
 					obj.getString(AvailProjectRoot::rootCopyright.name)
 				}
 				else "",
-				if (obj.containsKey(AvailProjectRoot::rootCopyright.name))
+				if (obj.containsKey(AvailProjectRoot::visible.name))
 				{
 					obj.getBoolean(AvailProjectRoot::visible.name)
 				}
