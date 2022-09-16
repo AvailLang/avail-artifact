@@ -1,8 +1,9 @@
 Avail Artifact
 --------------------------------------------------------------------------------
-[![Maven Central](https://img.shields.io/badge/maven--central-v1.0.0-0f824e)](https://search.maven.org/artifact/org.availlang/avail-artifact)
+[![Maven Central](https://img.shields.io/badge/maven--central-v2.0.0.alpha01-0f824e)](https://search.maven.org/artifact/org.availlang/avail-artifact)
 
-***TODO Update this README; IT IS OUT OF DATE***
+***TODO Update this README; IT IS OUT OF DATE AND MUST BE UPDATED BEFORE 
+TOOL RELEASE***
 
 A library used for packaging Avail artifacts for distribution as libraries or
 use as full running applications.
