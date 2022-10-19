@@ -51,7 +51,7 @@ class AvailProjectRoot constructor(
 	 * `"$name=$uri"`
 	 */
 	@Suppress("unused")
-	val modulePath: String = "$name=${location.fullPath}"
+	val modulePath: String = "$name=file:///${location.fullPath}"
 
 	override fun writeTo(writer: JSONWriter)
 	{

@@ -11,6 +11,9 @@ enum class ResourceType
 	/** Represents an ordinary Avail module. */
 	MODULE,
 
+	/** Represents an ordinary, headerless Avail module. */
+	HEADERLESS_MODULE,
+
 	/** Represents an Avail package representative. */
 	REPRESENTATIVE,
 
