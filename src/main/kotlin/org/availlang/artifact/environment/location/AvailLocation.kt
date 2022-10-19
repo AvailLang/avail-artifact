@@ -65,8 +65,6 @@ abstract class AvailLocation constructor(
 		}
 	}
 
-
-
 	override fun equals(other: Any?): Boolean
 	{
 		if (this === other) return true

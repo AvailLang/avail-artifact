@@ -15,15 +15,15 @@ enum class Scheme constructor(val prefix: String)
 	/**
 	 * A file location.
 	 */
-	FILE("file:/")
-	{
-		override val optionalPrefix: String = ""
-	},
+	FILE("file:///"),
+//	{
+//		override val optionalPrefix: String = ""
+//	},
 
 	/**
 	 * A JAR file.
 	 */
-	JAR("jar:");
+	JAR("jar://");
 
 	open val optionalPrefix: String get() = prefix
  }
