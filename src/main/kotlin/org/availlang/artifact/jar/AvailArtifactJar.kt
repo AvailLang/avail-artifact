@@ -212,14 +212,14 @@ class AvailArtifactJar constructor(
 		val metadata = mutableListOf<AvailRootFileMetadata>()
 		for (entry in entries)
 		{
-			var entryName = entry.name
+			var entryName = entry.name.replace("\\", "/")
 			if (!entryName.startsWith(prefix)) continue
 			entryName = entryName.removePrefix(prefix)
 			val type = when
 			{
-				extensions.any { entry.name.endsWith("$it/") } -> PACKAGE
+				extensions.any { entryName.endsWith("$it/") } -> PACKAGE
 				entryName.endsWith("/") -> DIRECTORY
-				extensions.any { entry.name.endsWith(it) } ->
+				extensions.any { entryName.endsWith(it) } ->
 				{
 					assert(!entry.isDirectory)
 					val parts = entryName.split("/")
