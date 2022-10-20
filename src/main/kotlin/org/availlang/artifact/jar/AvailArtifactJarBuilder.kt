@@ -34,6 +34,9 @@ import java.util.zip.ZipFile
  *   The [AvailArtifactManifest] to be added to the jar file.
  * @property jarManifestMainClass
  *   The main class for the Jar ([Attributes.Name.MAIN_CLASS]).
+ * @property customManifestItems
+ *   A map of manifest attribute string name to the string value to add as
+ *   additional fields to the manifest file of an Avail artifact.
  */
 @Suppress("unused")
 class AvailArtifactJarBuilder constructor(
@@ -41,7 +44,8 @@ class AvailArtifactJarBuilder constructor(
 	private val implementationVersion: String,
 	private val implementationTitle: String,
 	private val availArtifactManifest: AvailArtifactManifest,
-	private val jarManifestMainClass: String = "")
+	private val jarManifestMainClass: String = "",
+	private val customManifestItems: Map<String, String> = mapOf())
 {
 	/**
 	 * The [JarOutputStream] to package the library into.
@@ -60,6 +64,9 @@ class AvailArtifactJarBuilder constructor(
 		manifest.mainAttributes[Attributes.Name("Build-Time")] = formattedNow
 		manifest.mainAttributes[Attributes.Name.IMPLEMENTATION_VERSION] = implementationVersion
 		manifest.mainAttributes[Attributes.Name.IMPLEMENTATION_TITLE] = implementationTitle
+		customManifestItems.forEach { (k, v) ->
+			manifest.mainAttributes[Attributes.Name(k)] = v
+		}
 		if (jarManifestMainClass.isNotEmpty())
 		{
 			manifest.mainAttributes[Attributes.Name.MAIN_CLASS] = jarManifestMainClass
