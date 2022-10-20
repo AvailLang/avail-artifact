@@ -50,7 +50,7 @@ object DigestUtility
 					digest.update(file.readBytes())
 					val hex = digest.digest()
 						.joinToString("") { String.format("%02X", it) }
-					append("${file.toRelativeString(root)}:$hex\n")
+					append("${file.toRelativeString(root).replace("\\", "/")}:$hex\n")
 				}
 		}
 	}
