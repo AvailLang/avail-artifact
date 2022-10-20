@@ -176,7 +176,7 @@ abstract class AvailLocation constructor(
 				pathRelativeSuffix: String,
 				path: String,
 				scheme: Scheme
-			): AvailLocation = UserHome(path, scheme)
+			): AvailLocation = Absolute(path, scheme)
 		};
 
 		/**
