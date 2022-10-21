@@ -23,6 +23,10 @@ import org.availlang.json.JSONWriter
  * @param roots
  *   The map of the [AvailRootManifest]s keyed by [AvailRootManifest.name]
  *   that are present in the artifact.
+ * @param description
+ *   A description of the artifact.
+ * @param jvmComponent
+ *   The [JvmComponent] that describes JVM components if they exist.
  */
 class AvailArtifactManifestV1 constructor (
 	override val artifactType: AvailArtifactType,
@@ -33,6 +37,8 @@ class AvailArtifactManifestV1 constructor (
 ): AvailArtifactManifest
 {
 	override val artifactVersion: Int = 1
+
+	override fun toString(): String  = "$artifactType"
 
 	override fun writeTo(writer: JSONWriter)
 	{

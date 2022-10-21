@@ -257,6 +257,8 @@ class AvailArtifactJar constructor(
 		return metadata
 	}
 
+	override fun toString(): String = "$uri"
+
 	companion object
 	{
 		/**

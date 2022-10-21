@@ -88,6 +88,18 @@ class AvailArtifactJarBuilder constructor(
 	}
 
 	/**
+	 * Ensure the path uses only forward slashes, `/`, by replacing any
+	 * backslashes, `\`, with forward slashes.
+	 *
+	 * @param path
+	 *   The path to canonicalize.
+	 * @return
+	 *   The canonicalized path.
+	 */
+	private fun canonicalizePath (path: String): String =
+		path.replace("\\", "/")
+
+	/**
 	 * Add a Module Root to the Avail Library Jar.
 	 *
 	 * @param targetRoot
@@ -108,17 +120,21 @@ class AvailArtifactJarBuilder constructor(
 				"Failed to add module root, ${targetRoot.name}; provided " +
 					"root path, $rootPath, is not a directory")
 		}
+		val rootEntryName = canonicalizePath(
+			"$artifactRootDirectory/${targetRoot.name}/")
 		jarOutputStream.putNextEntry(
-			JarEntry("$artifactRootDirectory/${targetRoot.name}/"))
-		added.add("$artifactRootDirectory/${targetRoot.name}/")
+			JarEntry(rootEntryName))
+		added.add(rootEntryName)
 		jarOutputStream.closeEntry()
 
-		val sourceDirPrefix = AvailArtifact.rootArtifactSourcesDir(targetRoot.name)
+		val sourceDirPrefix =
+			AvailArtifact.rootArtifactSourcesDir(targetRoot.name)
 		root.walk()
 			.forEach { file ->
 				val pathRelativeName =
-					"$sourceDirPrefix${file.absolutePath.removePrefix(rootPath)}" +
-						if (file.isDirectory) "/" else ""
+					canonicalizePath(
+						"$sourceDirPrefix${file.absolutePath.removePrefix(rootPath)}" +
+						if (file.isDirectory) "/" else "")
 				jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
 				added.add(pathRelativeName)
 				if (file.isFile)
@@ -128,11 +144,11 @@ class AvailArtifactJarBuilder constructor(
 				}
 				jarOutputStream.closeEntry()
 			}
-		jarOutputStream.putNextEntry(
-			JarEntry(
-				"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.name)}/$availDigestsPathInArtifact/"))
-		added.add(
+		val entryName = canonicalizePath(
 			"${AvailArtifact.rootArtifactDigestDirPath(targetRoot.name)}/$availDigestsPathInArtifact/")
+		jarOutputStream.putNextEntry(JarEntry(entryName))
+
+		added.add(entryName)
 		jarOutputStream.closeEntry()
 
 		val digestFileName = AvailArtifact
@@ -143,7 +159,6 @@ class AvailArtifactJarBuilder constructor(
 		jarOutputStream.write(digest.toByteArray(Charsets.UTF_8))
 		added.add(digestFileName)
 		jarOutputStream.closeEntry()
-
 	}
 
 	/**
@@ -176,7 +191,8 @@ class AvailArtifactJarBuilder constructor(
 				artifactDescriptorFilePath ->
 				{
 					val adjustedDescriptor =
-						"$artifactRootDirectory/$jarSimpleName/$artifactDescriptorFileName"
+						canonicalizePath(
+							"$artifactRootDirectory/$jarSimpleName/$artifactDescriptorFileName")
 					jarOutputStream.putNextEntry(
 						JarEntry(adjustedDescriptor))
 					added.add(adjustedDescriptor)
@@ -191,7 +207,8 @@ class AvailArtifactJarBuilder constructor(
 				availArtifactManifestFile ->
 				{
 					val adjustedAvailManifest =
-						"$artifactRootDirectory/$jarSimpleName/$manifestFileName"
+						canonicalizePath(
+							"$artifactRootDirectory/$jarSimpleName/$manifestFileName")
 					val entry = JarEntry(adjustedAvailManifest)
 					jarOutputStream.putNextEntry(entry)
 					added.add(adjustedAvailManifest)
@@ -268,7 +285,8 @@ class AvailArtifactJarBuilder constructor(
 			"Expected $file to be a file not a directory!"
 		}
 
-		val pathRelativeName = "$targetDirectory/${file.name}"
+		val pathRelativeName = canonicalizePath(
+			"$targetDirectory/${file.name}")
 		if (!added.add(pathRelativeName))
 		{
 			jarOutputStream.putNextEntry(JarEntry(pathRelativeName))
