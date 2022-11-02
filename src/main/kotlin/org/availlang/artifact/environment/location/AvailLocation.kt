@@ -190,7 +190,7 @@ abstract class AvailLocation constructor(
 		 * @param scheme
 		 *   The [JSONObject] to extract the rest of the data from.
 		 */
-		protected abstract fun location (
+		abstract fun location (
 			pathRelativeSuffix: String,
 			path: String,
 			scheme: Scheme
