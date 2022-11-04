@@ -123,43 +123,12 @@ class AvailProjectV1 constructor(
 		{
 			val id = jsonObject.getString(AvailProjectV1::id.name)
 			val name = jsonObject.getString(AvailProjectV1::name.name)
-			val darkMode =
-				jsonObject.getBoolean(AvailProjectV1::darkMode.name)
+			val darkMode = jsonObject.getBoolean(AvailProjectV1::darkMode.name)
 			val repoLocation = AvailLocation.from(
 				projectDirectory,
-				jsonObject.getObject(
-					AvailProjectV1::repositoryLocation.name))
-			val roots = mutableMapOf<String, AvailProjectRoot>()
-			val templates = mutableMapOf<String, String>()
+				jsonObject.getObject(AvailProjectV1::repositoryLocation.name))
 			val projectProblems = mutableListOf<ProjectProblem>()
-			jsonObject.getArray(AvailProjectV1::roots.name)
-				.forEachIndexed { i, it ->
-					val rootObj = it as? JSONObject ?: run {
-						projectProblems.add(
-							ConfigFileProblem(
-								"Malformed Avail project config file, " +
-									"$CONFIG_FILE_NAME; malformed " +
-									AvailProjectV1::roots.name +
-									" object at position $i"))
-						return@forEachIndexed
-					}
-					val root =
-						try
-						{
-							AvailProjectRoot.from(projectDirectory, rootObj)
-						}
-						catch (e: Throwable)
-						{
-							projectProblems.add(
-								ConfigFileProblem(
-									"Malformed Avail project config" +
-										" file, $CONFIG_FILE_NAME; malformed " +
-										AvailProjectV1::roots.name +
-										" object at position $i"))
-							return@forEachIndexed
-						}
-					roots[root.id] = root
-				}
+			val templates = mutableMapOf<String, String>()
 			if (jsonObject.containsKey(AvailProjectV1::templates.name))
 			{
 				val map = jsonObject.getObject(AvailProjectV1::templates.name)
@@ -167,19 +136,46 @@ class AvailProjectV1 constructor(
 					templates[name] = expansion.string
 				}
 			}
-			val copyright =
-				if (jsonObject.containsKey(AvailProjectV1::projectCopyright.name))
-				{
-					jsonObject.getString(AvailProjectV1::projectCopyright.name)
-				}
-				else ""
-			return AvailProjectV1(
+			val copyright = jsonObject.getString(
+				AvailProjectV1::projectCopyright.name
+			) { "" }
+			val project = AvailProjectV1(
 				name,
 				darkMode,
 				repoLocation,
 				id,
-				roots,
 				projectCopyright = copyright)
+			val roots = jsonObject.getArray(AvailProjectV1::roots.name)
+			roots.forEachIndexed { i, it ->
+				val rootObj = it as? JSONObject ?: run {
+					projectProblems.add(
+						ConfigFileProblem(
+							"Malformed Avail project config file, " +
+								"$CONFIG_FILE_NAME; malformed " +
+								AvailProjectV1::roots.name +
+								" object at position $i"))
+					return@forEachIndexed
+				}
+				try
+				{
+					val root = AvailProjectRoot.from(
+						projectDirectory,
+						rootObj,
+						project.serializationVersion)
+					project.addRoot(root)
+				}
+				catch (e: Throwable)
+				{
+					projectProblems.add(
+						ConfigFileProblem(
+							"Malformed Avail project config" +
+								" file, $CONFIG_FILE_NAME; malformed " +
+								AvailProjectV1::roots.name +
+								" object at position $i"))
+				}
+			}
+			//TODO Report projectProblems
+			return project
 		}
 	}
 }

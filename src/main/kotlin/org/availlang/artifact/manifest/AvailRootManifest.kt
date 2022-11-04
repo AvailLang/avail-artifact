@@ -86,6 +86,17 @@ data class AvailRootManifest constructor(
 					throw AvailArtifactException(
 						"Problem extracting Avail Manifest Root name.", e)
 				}
+			val description =
+				try
+				{
+					obj.getString(AvailRootManifest::description.name)
+				}
+				catch (e: Throwable)
+				{
+					throw AvailArtifactException(
+						"Problem extracting Avail Manifest Root description.",
+						e)
+				}
 			val digestAlgorithm =
 				try
 				{
@@ -114,8 +125,7 @@ data class AvailRootManifest constructor(
 			val entryPoints =
 				try
 				{
-					obj.getArray(
-						AvailRootManifest::entryPoints.name).strings
+					obj.getArray(AvailRootManifest::entryPoints.name).strings
 				}
 				catch (e: Throwable)
 				{
@@ -123,30 +133,31 @@ data class AvailRootManifest constructor(
 						"Problem extracting Avail Manifest Root entry points.",
 						e)
 				}
-			val templates =
-				try
+			val templates = mutableMapOf<String, String>()
+			try
+			{
+				val key = AvailRootManifest::templates.name
+				if (obj.containsKey(key))
 				{
-					val key = AvailRootManifest::templates.name
-					if (obj.containsKey(key))
-					{
-						val map = obj.getObject(key)
-						val templates = mutableMapOf<String, String>()
-						map.forEach { (name, expansion) ->
-							templates[name] = expansion.string
-						}
-					}
-					else
-					{
-						mapOf<String, String>()
+					obj.getObject(key).associateTo(templates) {
+							(name, expansion) ->
+						name to expansion.string
 					}
 				}
-				catch (e: Throwable)
-				{
-					throw AvailArtifactException(
-						"Problem extracting Avail Manifest Root templates.",
-						e)
-				}
-			return AvailRootManifest(name, extensions, entryPoints)
+			}
+			catch (e: Throwable)
+			{
+				throw AvailArtifactException(
+					"Problem extracting Avail Manifest Root templates.",
+					e)
+			}
+			return AvailRootManifest(
+				name = name,
+				availModuleExtensions = extensions,
+				entryPoints = entryPoints,
+				templates = templates,
+				description = description,
+				digestAlgorithm = digestAlgorithm)
 		}
 	}
 }

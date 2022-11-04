@@ -14,12 +14,16 @@ import java.io.File
  *   The absolute path to the location.
  * @param scheme
  *   The [Scheme] of the location.
+ * @param rootNameInJar
+ *   If the path indicates a jar file, this is the name of the root to use
+ *   within that file.
  */
 @Suppress("unused")
 class Absolute constructor (
 	path: String,
-	scheme: Scheme
-): AvailLocation(LocationType.absolute, scheme, path)
+	scheme: Scheme,
+	rootNameInJar: String?
+): AvailLocation(LocationType.absolute, scheme, path, rootNameInJar)
 {
 	override val fullPathNoPrefix: String get() = path
 
@@ -27,8 +31,6 @@ class Absolute constructor (
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
-	): AvailLocation =
-		Absolute(
-			"$path${File.separator}$relativePath", scheme)
-
+	): AvailLocation = Absolute(
+		"$path${File.separator}$relativePath", scheme, rootNameInJar)
 }

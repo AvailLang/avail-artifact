@@ -16,11 +16,15 @@ import java.io.File
  *   The path relative to the [AvailEnvironment.availHomeRepos] directory.
  * @param scheme
  *   The [Scheme] of the location.
+ * @param rootNameInJar
+ *   If the path indicates a jar file, this is the name of the root to use
+ *   within that file.
  */
 class AvailRepositories constructor (
 	path: String = "",
-	scheme: Scheme = Scheme.FILE
-): AvailHome(path, scheme, LocationType.availRepositories)
+	scheme: Scheme = Scheme.FILE,
+	rootNameInJar: String?
+): AvailHome(path, scheme, LocationType.availRepositories, rootNameInJar)
 {
 	override val fullPathNoPrefix: String get() =
 		"${AvailEnvironment.availHomeRepos}${File.separator}$path"
@@ -29,7 +33,6 @@ class AvailRepositories constructor (
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
-	): AvailLocation =
-		AvailRepositories(
-			"$path${File.separator}$relativePath", scheme)
+	): AvailLocation = AvailRepositories(
+		"$path${File.separator}$relativePath", scheme, rootNameInJar)
 }

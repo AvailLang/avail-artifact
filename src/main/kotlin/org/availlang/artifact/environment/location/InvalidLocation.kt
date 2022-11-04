@@ -17,11 +17,15 @@ import java.io.File
  *   The [AvailLocation.path].
  * @param problem
  *   Text explaining the reason the location is invalid.
+ * @param rootNameInJar
+ *   If the path indicates a jar file, this is the name of the root to use
+ *   within that file.
  */
 class InvalidLocation constructor (
 	path: String,
-	val problem: String
-): AvailLocation(LocationType.invalid, Scheme.INVALID, path)
+	val problem: String,
+	rootNameInJar: String?
+): AvailLocation(LocationType.invalid, Scheme.INVALID, path, rootNameInJar)
 {
 	override val fullPathNoPrefix: String get() = path
 
@@ -30,5 +34,5 @@ class InvalidLocation constructor (
 		scheme: Scheme,
 		locationType: LocationType
 	): AvailLocation = InvalidLocation(
-		"$path${File.separator}$relativePath", problem)
+		"$path${File.separator}$relativePath", problem, rootNameInJar)
 }

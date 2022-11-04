@@ -17,12 +17,16 @@ import java.io.File
  *   The [Scheme] of the location.
  * @param locationType
  *   The [LocationType].
+ * @param rootNameInJar
+ *   If the path indicates a jar file, this is the name of the root to use
+ *   within that file.
  */
 open class UserHome constructor (
 	path: String,
 	scheme: Scheme,
-	locationType: LocationType = LocationType.home
-): AvailLocation(locationType, scheme, path)
+	locationType: LocationType = LocationType.home,
+	rootNameInJar: String?
+): AvailLocation(locationType, scheme, path, rootNameInJar)
 {
 	override val fullPathNoPrefix: String get() =
 		"${System.getProperty("user.home")}${File.separator}$path"
@@ -31,7 +35,9 @@ open class UserHome constructor (
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
-	): AvailLocation =
-		UserHome(
-			"$path${File.separator}$relativePath", scheme, locationType)
+	): AvailLocation = UserHome(
+		"$path${File.separator}$relativePath",
+		scheme,
+		locationType,
+		rootNameInJar)
 }

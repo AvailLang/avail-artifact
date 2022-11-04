@@ -22,12 +22,16 @@ import java.io.File
  *   The [Scheme] of the location.
  * @param projectHome
  *   The absolute path to the [AvailProject] directory.
+ * @param rootNameInJar
+ *   If the path indicates a jar file, this is the name of the root to use
+ *   within that file.
  */
 class ProjectHome constructor (
 	path: String,
 	scheme: Scheme,
-	val projectHome: String
-): AvailLocation(LocationType.project, scheme, path)
+	val projectHome: String,
+	rootNameInJar: String?
+): AvailLocation(LocationType.project, scheme, path, rootNameInJar)
 {
 	override val fullPathNoPrefix: String get() =
 		"$projectHome${File.separator}$path"
@@ -38,7 +42,9 @@ class ProjectHome constructor (
 		relativePath: String,
 		scheme: Scheme,
 		locationType: LocationType
-	): AvailLocation =
-		ProjectHome(
-			"$path${File.separator}$relativePath", scheme, projectHome)
+	): AvailLocation = ProjectHome(
+		"$path${File.separator}$relativePath",
+		scheme,
+		projectHome,
+		rootNameInJar)
 }

@@ -17,11 +17,15 @@ import org.availlang.json.JSONWriter
  *   The [Scheme] for this location.
  * @property path
  *   The path to this location.
+ * @property rootNameInJar
+ *   If the path indicates a jar file, this is the name of the root to use
+ *   within that file.
  */
 abstract class AvailLocation constructor(
 	val locationType: LocationType,
 	val scheme: Scheme,
-	val path: String
+	val path: String,
+	val rootNameInJar: String?
 ): JSONFriendly
 {
 	/**
@@ -80,7 +84,8 @@ abstract class AvailLocation constructor(
 		return path.hashCode()
 	}
 
-	override fun toString(): String = fullPath
+	override fun toString(): String =
+		rootNameInJar?.let { "$fullPath ($it)" } ?: fullPath
 
 	/**
 	 * The acceptable path location types.
@@ -100,11 +105,13 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
+				scheme: Scheme,
+				rootNameInJar: String?
 			): AvailLocation =
 				InvalidLocation(
 					path,
-					"Location type is literally $name, which not allowed.")
+					"Location type is literally $name, which not allowed.",
+					rootNameInJar)
 		},
 
 		/** The path is relative to the [AvailEnvironment.availHome]. */
@@ -113,8 +120,10 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = AvailHome(path, scheme)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = AvailHome(
+				path, scheme, rootNameInJar = rootNameInJar)
 		},
 
 		/** The path is relative to the user's home directory. */
@@ -123,8 +132,10 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = UserHome(path, scheme)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = UserHome(
+				path, scheme, rootNameInJar = rootNameInJar)
 		},
 
 		/** The path is relative to the [AvailEnvironment.availHomeLibs]. */
@@ -133,8 +144,9 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = AvailLibraries(path, scheme)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = AvailLibraries(path, scheme, rootNameInJar)
 		},
 
 		/** The path is relative to the [AvailEnvironment.availHomeRepos]. */
@@ -143,8 +155,9 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = AvailRepositories(path, scheme)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = AvailRepositories(path, scheme, rootNameInJar)
 		},
 
 		/**
@@ -155,8 +168,9 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = AvailHomeWorkbench(path, scheme)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = AvailHomeWorkbench(path, scheme, rootNameInJar)
 		},
 
 		/** The path is relative to the project root directory. */
@@ -165,8 +179,10 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = ProjectHome(path, scheme, pathRelativeSuffix)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = ProjectHome(
+				path, scheme, pathRelativeSuffix, rootNameInJar)
 		},
 
 		/** The path is absolute. */
@@ -175,8 +191,9 @@ abstract class AvailLocation constructor(
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
-				scheme: Scheme
-			): AvailLocation = Absolute(path, scheme)
+				scheme: Scheme,
+				rootNameInJar: String?
+			): AvailLocation = Absolute(path, scheme, rootNameInJar)
 		};
 
 		/**
@@ -189,11 +206,15 @@ abstract class AvailLocation constructor(
 		 *   The already extracted path.
 		 * @param scheme
 		 *   The [JSONObject] to extract the rest of the data from.
+		 * @param rootNameInJar
+		 *   If the path indicates a jar file, this is the name of the root to
+		 *   use within that file.
 		 */
 		abstract fun location (
 			pathRelativeSuffix: String,
 			path: String,
-			scheme: Scheme
+			scheme: Scheme,
+			rootNameInJar: String?
 		): AvailLocation
 
 		companion object
@@ -230,12 +251,12 @@ abstract class AvailLocation constructor(
 						"Malformed configuration file: no 'path' " +
 							"specified for a Location")
 					e.printStackTrace()
-					return InvalidLocation(
-						"", "missing path")
+					return InvalidLocation("", "missing path", "")
 				}
+				val locationTypeName = AvailLocation::locationType.name
 				val raw = try
 				{
-					obj.getString(AvailLocation::locationType.name)
+					obj.getString(locationTypeName)
 				}
 				catch (e: Throwable)
 				{
@@ -244,18 +265,17 @@ abstract class AvailLocation constructor(
 							"location type")
 					e.printStackTrace()
 					return InvalidLocation(
-						path,
-						"missing ${AvailLocation::locationType.name}")
+						path, "missing $locationTypeName", "")
 				}
 				if (!validNames.contains(raw))
 				{
 					System.err.println(
 						"Malformed configuration file: $raw is not a " +
-							"valid ${AvailLocation::locationType.name} value")
+							"valid $locationTypeName value")
 					return InvalidLocation(
 						path,
-						"invalid value for " +
-							"${AvailLocation::locationType.name}: $raw")
+						"invalid value for $locationTypeName: $raw",
+						"")
 				}
 				val scheme = try
 				{
@@ -268,10 +288,28 @@ abstract class AvailLocation constructor(
 							"scheme type")
 					e.printStackTrace()
 					return InvalidLocation(
-						path,
-						"missing ${AvailLocation::scheme.name}")
+						path, "missing ${AvailLocation::scheme.name}", "")
 				}
-				return valueOf(raw).location(projectDirectory, path, scheme)
+				val rootNameInJarName = AvailLocation::rootNameInJar.name
+				val rootNameInJar = try
+				{
+					if (obj.containsKey(rootNameInJarName))
+					{
+						obj.getString(rootNameInJarName)
+					}
+					else null
+				}
+				catch (e: Throwable)
+				{
+					System.err.println(
+						"Malformed configuration file: Expected string for " +
+							"optional $rootNameInJarName")
+					e.printStackTrace()
+					return InvalidLocation(
+						path, "invalid $rootNameInJarName", "")
+				}
+				return valueOf(raw).location(
+					projectDirectory, path, scheme, rootNameInJar)
 			}
 		}
 	}

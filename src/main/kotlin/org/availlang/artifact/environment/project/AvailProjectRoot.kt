@@ -30,8 +30,11 @@ import java.util.*
  * @property rootCopyright
  *   The copyright to prepend to new Avail modules in this root.
  * @property visible
- *   `true` indicates the root is intended to be displayed; `false` indciates
+ *   `true` indicates the root is intended to be displayed; `false` indicates
  *   the root should not be visible by default.
+ * @property rootNameInJar
+ *   If this root is a jar file, the name of the root within that jar file,
+ *   otherwise null.
  */
 class AvailProjectRoot constructor(
 	val projectDirectory: String,
@@ -43,6 +46,7 @@ class AvailProjectRoot constructor(
 	val id: String = UUID.randomUUID().toString(),
 	var rootCopyright: String = "",
 	var visible: Boolean = true,
+	val rootNameInJar: String? = null
 ): JSONFriendly
 {
 	/**
@@ -77,10 +81,13 @@ class AvailProjectRoot constructor(
 				}
 			}
 			at(AvailProjectRoot::rootCopyright.name) { write(rootCopyright) }
+			rootNameInJar?.let { root ->
+				at(AvailProjectRoot::rootNameInJar.name) { write(root) }
+			}
 		}
 	}
 
-	override fun toString(): String = modulePath
+	override fun toString(): String = "$name=${location.fullPath}"
 
 	companion object
 	{
@@ -90,13 +97,17 @@ class AvailProjectRoot constructor(
 		 * @param projectDirectory
 		 *   The root directory of this project.
 		 * @param obj
-		 *   The `JSONObject` that contains the `ProjectRoot` data.
+		 *   The [JSONObject] that contains the [AvailProjectRoot] data.
+		 * @param serializationVersion
+		 *   The [Int] identifying the version of the [AvailProject] within
+		 *   which this is a root.
 		 * @return
 		 *   The extracted `ProjectRoot`.
 		 */
 		fun from (
 			projectDirectory: String,
-			obj: JSONObject
+			obj: JSONObject,
+			serializationVersion: Int
 		): AvailProjectRoot =
 			AvailProjectRoot(
 				projectDirectory,
@@ -104,32 +115,25 @@ class AvailProjectRoot constructor(
 				AvailLocation.from(
 					projectDirectory,
 					obj.getObject(AvailProjectRoot::location.name)),
-				obj.getArray(
-					AvailProjectRoot::availModuleExtensions.name).strings,
-				run {
-					if (obj.containsKey(AvailProjectRoot::templates.name))
-					{
-						val templates = mutableMapOf<String, String>()
-						val map = obj.getObject(
-							AvailProjectRoot::templates.name)
-						map.forEach { (name, expansion) ->
-							templates[name] = expansion.string
-						}
-						templates
+				obj.getArray(AvailProjectRoot::availModuleExtensions.name)
+					.strings,
+				if (obj.containsKey(AvailProjectRoot::templates.name))
+				{
+					val templates =
+						obj.getObject(AvailProjectRoot::templates.name)
+					templates.associateTo(mutableMapOf()) { (name, expansion) ->
+						name to expansion.string
 					}
-					else mapOf<String, String>()
-				},
+				}
+				else mapOf(),
 				obj.getBoolean(AvailProjectRoot::editable.name),
 				obj.getString(AvailProjectRoot::id.name),
-				if (obj.containsKey(AvailProjectRoot::rootCopyright.name))
+				obj.getString(AvailProjectRoot::rootCopyright.name) { "" },
+				obj.getBoolean(AvailProjectRoot::visible.name) { true },
+				if (obj.containsKey(AvailProjectRoot::rootNameInJar.name))
 				{
-					obj.getString(AvailProjectRoot::rootCopyright.name)
+					obj.getString(AvailProjectRoot::rootNameInJar.name)
 				}
-				else "",
-				if (obj.containsKey(AvailProjectRoot::visible.name))
-				{
-					obj.getBoolean(AvailProjectRoot::visible.name)
-				}
-				else true)
+				else null)
 	}
 }
