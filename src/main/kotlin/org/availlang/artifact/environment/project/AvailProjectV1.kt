@@ -77,19 +77,19 @@ class AvailProjectV1 constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailProjectV1::id.name) { write(id) }
-			at(AvailProjectV1::darkMode.name) { write(darkMode) }
-			at(AvailProjectV1::serializationVersion.name) {
+			at(::id.name) { write(id) }
+			at(::darkMode.name) { write(darkMode) }
+			at(::serializationVersion.name) {
 				write(serializationVersion)
 			}
-			at(AvailProjectV1::name.name) { write(name) }
-			at(AvailProjectV1::repositoryLocation.name) {
+			at(::name.name) { write(name) }
+			at(::repositoryLocation.name) {
 				write(repositoryLocation)
 			}
-			at(AvailProjectV1::roots.name) { writeArray(availProjectRoots) }
+			at(::roots.name) { writeArray(availProjectRoots) }
 			if (templates.isNotEmpty())
 			{
-				at(AvailProjectV1::templates.name) {
+				at(::templates.name) {
 					writeObject {
 						templates.forEach { (name, expansion) ->
 							at(name) { write(expansion) }
@@ -97,7 +97,7 @@ class AvailProjectV1 constructor(
 					}
 				}
 			}
-			at(AvailProjectV1::projectCopyright.name) {
+			at(::projectCopyright.name) {
 				write(projectCopyright)
 			}
 		}

@@ -179,7 +179,8 @@ class AvailArtifactJar constructor(
 	{
 		val digests = extractDigestForRoot(rootName)
 		val entries = jarFile.entries()
-		return extractFileMetadataForRoot(rootName, entries, digests)
+		return extractFileMetadataForRoot(
+			rootName, uri.fragment, entries, digests)
 	}
 
 	/**
@@ -200,14 +201,15 @@ class AvailArtifactJar constructor(
 	@Suppress("MemberVisibilityCanBePrivate")
 	fun extractFileMetadataForRoot(
 		rootName: String,
+		rootNameInJar: String,
 		entries: Enumeration<JarEntry>,
 		digests: Map<String, ByteArray>
 	): List<AvailRootFileMetadata>
 	{
 		val extensions =
-			manifest.roots[rootName]?.availModuleExtensions ?:
+			manifest.roots[rootNameInJar]?.availModuleExtensions ?:
 			listOf(AvailRootFileMetadata.availExtension)
-		val prefix = "${AvailArtifact.artifactRootDirectory}/$rootName/" +
+		val prefix = "${AvailArtifact.artifactRootDirectory}/$rootNameInJar/" +
 			"${AvailArtifact.availSourcesPathInArtifact}/"
 		val metadata = mutableListOf<AvailRootFileMetadata>()
 		for (entry in entries)

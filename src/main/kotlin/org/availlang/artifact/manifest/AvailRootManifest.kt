@@ -41,18 +41,14 @@ data class AvailRootManifest constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailRootManifest::name.name) { write(name) }
-			at(AvailRootManifest::description.name) { write(description) }
-			at(AvailRootManifest::digestAlgorithm.name) {
-				write(digestAlgorithm)
-			}
-			at(AvailRootManifest::availModuleExtensions.name) {
+			at(::name.name) { write(name) }
+			at(::description.name) { write(description) }
+			at(::digestAlgorithm.name) { write(digestAlgorithm) }
+			at(::availModuleExtensions.name) {
 				writeStrings(availModuleExtensions)
 			}
-			at(AvailRootManifest::entryPoints.name) {
-				writeStrings(entryPoints)
-			}
-			at(AvailRootManifest::templates.name) {
+			at(::entryPoints.name) { writeStrings(entryPoints) }
+			at(::templates.name) {
 				writeObject {
 					templates.forEach { (name, expansion) ->
 						at(name) { write(expansion) }

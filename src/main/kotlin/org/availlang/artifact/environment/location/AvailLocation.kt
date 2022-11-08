@@ -4,6 +4,7 @@ import org.availlang.artifact.environment.AvailEnvironment
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
+import java.util.Objects
 
 /**
  * Represents a location of a URI location for something related to an
@@ -31,7 +32,13 @@ abstract class AvailLocation constructor(
 	/**
 	 * Answer the full path to the location.
 	 */
-	val fullPath: String get() = "${scheme.optionalPrefix}$fullPathNoPrefix"
+	val fullPath: String get() = buildString {
+		append(scheme.optionalPrefix)
+		append(fullPathNoPrefix)
+		rootNameInJar?.let { r ->
+			append('#')
+			append(r) }
+	}
 
 	/**
 	 * Answer the full path to the location.
@@ -63,9 +70,10 @@ abstract class AvailLocation constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailLocation::locationType.name) { write(locationType.name) }
-			at(AvailLocation::scheme.name) { write(scheme.name) }
-			at(AvailLocation::path.name) { write(path) }
+			at(::locationType.name) { write(locationType.name) }
+			at(::scheme.name) { write(scheme.name) }
+			at(::path.name) { write(path) }
+			rootNameInJar?.let { r -> at(::rootNameInJar.name) { write(r)} }
 		}
 	}
 
@@ -73,9 +81,8 @@ abstract class AvailLocation constructor(
 	{
 		if (this === other) return true
 		if (other !is AvailLocation) return false
-
 		if (path != other.path) return false
-
+		if (!Objects.equals(rootNameInJar, other.rootNameInJar)) return false
 		return true
 	}
 
@@ -84,8 +91,7 @@ abstract class AvailLocation constructor(
 		return path.hashCode()
 	}
 
-	override fun toString(): String =
-		rootNameInJar?.let { "$fullPath ($it)" } ?: fullPath
+	override fun toString(): String = fullPath
 
 	/**
 	 * The acceptable path location types.

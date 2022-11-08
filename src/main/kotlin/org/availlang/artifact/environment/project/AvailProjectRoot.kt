@@ -32,9 +32,6 @@ import java.util.*
  * @property visible
  *   `true` indicates the root is intended to be displayed; `false` indicates
  *   the root should not be visible by default.
- * @property rootNameInJar
- *   If this root is a jar file, the name of the root within that jar file,
- *   otherwise null.
  */
 class AvailProjectRoot constructor(
 	val projectDirectory: String,
@@ -45,8 +42,7 @@ class AvailProjectRoot constructor(
 	var editable: Boolean = location.editable,
 	val id: String = UUID.randomUUID().toString(),
 	var rootCopyright: String = "",
-	var visible: Boolean = true,
-	val rootNameInJar: String? = null
+	var visible: Boolean = true
 ): JSONFriendly
 {
 	/**
@@ -60,19 +56,17 @@ class AvailProjectRoot constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailProjectRoot::id.name) { write(id) }
-			at(AvailProjectRoot::name.name) { write(name) }
-			at(AvailProjectRoot::editable.name) { write(editable) }
-			at(AvailProjectRoot::visible.name) { write(visible) }
-			at(AvailProjectRoot::location.name) {
-				location.writeTo(this@writeObject)
-			}
-			at(AvailProjectRoot::availModuleExtensions.name) {
+			at(::id.name) { write(id) }
+			at(::name.name) { write(name) }
+			at(::editable.name) { write(editable) }
+			at(::visible.name) { write(visible) }
+			at(::location.name) { location.writeTo(this@writeObject) }
+			at(::availModuleExtensions.name) {
 				writeStrings(availModuleExtensions)
 			}
 			if (templates.isNotEmpty())
 			{
-				at(AvailProjectRoot::templates.name) {
+				at(::templates.name) {
 					writeObject {
 						templates.forEach { (name, expansion) ->
 							at(name) { write(expansion) }
@@ -80,10 +74,7 @@ class AvailProjectRoot constructor(
 					}
 				}
 			}
-			at(AvailProjectRoot::rootCopyright.name) { write(rootCopyright) }
-			rootNameInJar?.let { root ->
-				at(AvailProjectRoot::rootNameInJar.name) { write(root) }
-			}
+			at(::rootCopyright.name) { write(rootCopyright) }
 		}
 	}
 
@@ -92,7 +83,8 @@ class AvailProjectRoot constructor(
 	companion object
 	{
 		/**
-		 * Extract and build a [AvailProjectRoot] from the provided [JSONObject].
+		 * Extract and build an [AvailProjectRoot] from the provided
+		 * [JSONObject].
 		 *
 		 * @param projectDirectory
 		 *   The root directory of this project.
@@ -108,32 +100,25 @@ class AvailProjectRoot constructor(
 			projectDirectory: String,
 			obj: JSONObject,
 			serializationVersion: Int
-		): AvailProjectRoot =
-			AvailProjectRoot(
+		) = AvailProjectRoot(
+			projectDirectory,
+			obj.getString(AvailProjectRoot::name.name),
+			AvailLocation.from(
 				projectDirectory,
-				obj.getString(AvailProjectRoot::name.name),
-				AvailLocation.from(
-					projectDirectory,
-					obj.getObject(AvailProjectRoot::location.name)),
-				obj.getArray(AvailProjectRoot::availModuleExtensions.name)
-					.strings,
-				if (obj.containsKey(AvailProjectRoot::templates.name))
-				{
-					val templates =
-						obj.getObject(AvailProjectRoot::templates.name)
-					templates.associateTo(mutableMapOf()) { (name, expansion) ->
-						name to expansion.string
-					}
+				obj.getObject(AvailProjectRoot::location.name)),
+			obj.getArray(AvailProjectRoot::availModuleExtensions.name).strings,
+			if (obj.containsKey(AvailProjectRoot::templates.name))
+			{
+				val templates =
+					obj.getObject(AvailProjectRoot::templates.name)
+				templates.associateTo(mutableMapOf()) { (name, expansion) ->
+					name to expansion.string
 				}
-				else mapOf(),
-				obj.getBoolean(AvailProjectRoot::editable.name),
-				obj.getString(AvailProjectRoot::id.name),
-				obj.getString(AvailProjectRoot::rootCopyright.name) { "" },
-				obj.getBoolean(AvailProjectRoot::visible.name) { true },
-				if (obj.containsKey(AvailProjectRoot::rootNameInJar.name))
-				{
-					obj.getString(AvailProjectRoot::rootNameInJar.name)
-				}
-				else null)
+			}
+			else mapOf(),
+			obj.getBoolean(AvailProjectRoot::editable.name),
+			obj.getString(AvailProjectRoot::id.name),
+			obj.getString(AvailProjectRoot::rootCopyright.name) { "" },
+			obj.getBoolean(AvailProjectRoot::visible.name) { true })
 	}
 }

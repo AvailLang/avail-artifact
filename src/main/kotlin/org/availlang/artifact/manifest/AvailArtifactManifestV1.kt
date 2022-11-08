@@ -43,30 +43,12 @@ class AvailArtifactManifestV1 constructor (
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(AvailArtifactManifest::artifactVersion.name)
-			{
-				write(artifactVersion)
-			}
-			at(AvailArtifactManifest::artifactType.name)
-			{
-				write(artifactType.name)
-			}
-			at(AvailArtifactManifest::constructed.name)
-			{
-				write(constructed)
-			}
-			at(AvailArtifactManifest::description.name)
-			{
-				write(description)
-			}
-			at(AvailArtifactManifest::roots.name)
-			{
-				writeArray(roots.values)
-			}
-			at(AvailArtifactManifest::jvmComponent.name)
-			{
-				write(jvmComponent)
-			}
+			at(::artifactVersion.name) { write(artifactVersion) }
+			at(::artifactType.name) { write(artifactType.name) }
+			at(::constructed.name) { write(constructed) }
+			at(::description.name) { write(description) }
+			at(::roots.name) { writeArray(roots.values) }
+			at(::jvmComponent.name) { write(jvmComponent) }
 		}
 	}
 

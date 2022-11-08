@@ -28,27 +28,14 @@ class JvmComponent constructor(
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
-			at(JvmComponent::hasJVMComponents.name)
-			{
-				write(hasJVMComponents)
-			}
-			at(JvmComponent::description.name)
-			{
-				write(description)
-			}
-			at(JvmComponent::mains.name)
-			{
+			at(::hasJVMComponents.name) { write(hasJVMComponents) }
+			at(::description.name) { write(description) }
+			at(::mains.name) {
 				writeArray {
 					mains.forEach { (k,v) ->
 						writeObject {
-							at(MAIN)
-							{
-								write(k)
-							}
-							at(DESCRIPTION)
-							{
-								write(v)
-							}
+							at(MAIN) { write(k) }
+							at(DESCRIPTION) { write(v) }
 						}
 					}
 				}
