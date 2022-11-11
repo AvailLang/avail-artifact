@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate", "DuplicatedCode")
+
 package org.availlang.artifact.environment.project
 
 import org.availlang.artifact.environment.location.AvailLocation
@@ -32,6 +34,8 @@ import java.util.*
  * @property visible
  *   `true` indicates the root is intended to be displayed; `false` indicates
  *   the root should not be visible by default.
+ * @property stylesheet
+ *   The default stylesheet for this root.
  */
 class AvailProjectRoot constructor(
 	val projectDirectory: String,
@@ -42,7 +46,8 @@ class AvailProjectRoot constructor(
 	var editable: Boolean = location.editable,
 	val id: String = UUID.randomUUID().toString(),
 	var rootCopyright: String = "",
-	var visible: Boolean = true
+	var visible: Boolean = true,
+	val stylesheet: Map<String, StyleAttributes> = mapOf()
 ): JSONFriendly
 {
 	/**
@@ -74,6 +79,16 @@ class AvailProjectRoot constructor(
 					}
 				}
 			}
+			if (stylesheet.isNotEmpty())
+			{
+				at(::stylesheet.name) {
+					writeObject {
+						stylesheet.forEach { (rule, attributes) ->
+							at(rule) { write(attributes) }
+						}
+					}
+				}
+			}
 			at(::rootCopyright.name) { write(rootCopyright) }
 		}
 	}
@@ -99,7 +114,7 @@ class AvailProjectRoot constructor(
 		fun from (
 			projectDirectory: String,
 			obj: JSONObject,
-			serializationVersion: Int
+			@Suppress("UNUSED_PARAMETER") serializationVersion: Int
 		) = AvailProjectRoot(
 			projectDirectory,
 			obj.getString(AvailProjectRoot::name.name),
@@ -107,18 +122,19 @@ class AvailProjectRoot constructor(
 				projectDirectory,
 				obj.getObject(AvailProjectRoot::location.name)),
 			obj.getArray(AvailProjectRoot::availModuleExtensions.name).strings,
-			if (obj.containsKey(AvailProjectRoot::templates.name))
-			{
-				val templates =
-					obj.getObject(AvailProjectRoot::templates.name)
-				templates.associateTo(mutableMapOf()) { (name, expansion) ->
+			obj.getObjectOrNull(AvailProjectRoot::templates.name)?.let {
+				it.associateTo(mutableMapOf()) { (name, expansion) ->
 					name to expansion.string
 				}
-			}
-			else mapOf(),
+			} ?: mapOf(),
 			obj.getBoolean(AvailProjectRoot::editable.name),
 			obj.getString(AvailProjectRoot::id.name),
 			obj.getString(AvailProjectRoot::rootCopyright.name) { "" },
-			obj.getBoolean(AvailProjectRoot::visible.name) { true })
+			obj.getBoolean(AvailProjectRoot::visible.name) { true },
+			obj.getObjectOrNull(AvailProjectRoot::stylesheet.name)?.let {
+				it.associateTo(mutableMapOf()) { (rule, attributes) ->
+					rule to StyleAttributes(attributes as JSONObject)
+				}
+			} ?: mapOf())
 	}
 }

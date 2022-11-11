@@ -12,9 +12,10 @@ plugins {
 }
 
 group = "org.availlang"
-version = "2.0.0.alpha11"
+version = "2.0.0.alpha12"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -34,7 +35,7 @@ kotlin {
 }
 
 dependencies {
-    api("org.availlang:avail-json:1.2.0")
+    api("org.availlang:avail-json:2.0.0")
     testImplementation(kotlin("test"))
 }
 
@@ -55,7 +56,7 @@ private val credentialsWarning =
             "as the environment variables: 'OSSRH_USER' and 'OSSRH_PASSWORD'"
 
 /**
- * Check that the publish task has access to the necessary credentials.
+ * Check that the `publish` task has access to the necessary credentials.
  */
 fun checkCredentials ()
 {
@@ -168,7 +169,9 @@ publishing {
                 groupId = project.group.toString()
                 name.set("Avail Artifact")
                 packaging = "jar"
-                description.set("This module provides utilites for working with Avail artifacts.")
+                description.set(
+                    "This module provides utilities for working with "
+                    + "Avail artifacts.")
                 url.set("https://www.availlang.org/")
                 licenses {
                     license {

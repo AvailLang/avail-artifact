@@ -1,5 +1,5 @@
 /*
- * AvailProjectConfiguration.kt
+ * AvailProjectV1.kt
  * Copyright © 1993-2022, The Avail Foundation, LLC.
  * All rights reserved.
  *
@@ -29,6 +29,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+@file:Suppress("DuplicatedCode")
 
 package org.availlang.artifact.environment.project
 
@@ -69,10 +71,11 @@ class AvailProjectV1 constructor(
 	override val id: String = UUID.randomUUID().toString(),
 	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf(),
 	override val templates: Map<String, String> = mutableMapOf(),
-	override var projectCopyright: String = ""
+	override var projectCopyright: String = "",
+	override val stylesheet: Map<String, StyleAttributes> = mutableMapOf()
 ): AvailProject
 {
-	override val serializationVersion: Int = 1
+	override val serializationVersion = AvailProjectV1.serializationVersion
 
 	override fun writeTo(writer: JSONWriter)
 	{
@@ -97,6 +100,16 @@ class AvailProjectV1 constructor(
 					}
 				}
 			}
+			if (stylesheet.isNotEmpty())
+			{
+				at(::stylesheet.name) {
+					writeObject {
+						stylesheet.forEach { (rule, attributes) ->
+							at(rule) { write(attributes) }
+						}
+					}
+				}
+			}
 			at(::projectCopyright.name) {
 				write(projectCopyright)
 			}
@@ -105,6 +118,9 @@ class AvailProjectV1 constructor(
 
 	companion object
 	{
+		/** The serialization version (for access without an instance). */
+		const val serializationVersion: Int = 1
+
 		/**
 		 * Extract and build a [AvailProjectV1] from the provided
 		 * [JSONObject].
@@ -127,55 +143,79 @@ class AvailProjectV1 constructor(
 			val repoLocation = AvailLocation.from(
 				projectDirectory,
 				jsonObject.getObject(AvailProjectV1::repositoryLocation.name))
+			val templates =  jsonObject.getObjectOrNull(
+				AvailProjectV1::templates.name
+			)?.let { o ->
+				o.map { (name, expansion) -> name to expansion.string }
+					.associate { it }
+			} ?: mapOf()
 			val projectProblems = mutableListOf<ProjectProblem>()
-			val templates = mutableMapOf<String, String>()
-			if (jsonObject.containsKey(AvailProjectV1::templates.name))
-			{
-				val map = jsonObject.getObject(AvailProjectV1::templates.name)
-				map.forEach { (name, expansion) ->
-					templates[name] = expansion.string
-				}
-			}
-			val copyright = jsonObject.getString(
-				AvailProjectV1::projectCopyright.name
-			) { "" }
-			val project = AvailProjectV1(
-				name,
-				darkMode,
-				repoLocation,
-				id,
-				projectCopyright = copyright)
-			val roots = jsonObject.getArray(AvailProjectV1::roots.name)
-			roots.forEachIndexed { i, it ->
+			val roots = jsonObject.getArray(
+				AvailProjectV1::roots.name
+			).mapIndexedNotNull { i, it ->
 				val rootObj = it as? JSONObject ?: run {
 					projectProblems.add(
 						ConfigFileProblem(
-							"Malformed Avail project config file, " +
-								"$CONFIG_FILE_NAME; malformed " +
-								AvailProjectV1::roots.name +
-								" object at position $i"))
-					return@forEachIndexed
+							"Malformed Avail project config file, "
+								+ "$CONFIG_FILE_NAME; malformed "
+								+ AvailProjectV1::roots.name
+								+ " object at position $i"))
+					return@mapIndexedNotNull null
 				}
-				try
+				return@mapIndexedNotNull try
 				{
 					val root = AvailProjectRoot.from(
 						projectDirectory,
 						rootObj,
-						project.serializationVersion)
-					project.addRoot(root)
+						serializationVersion
+					)
+					root.name to root
 				}
 				catch (e: Throwable)
 				{
 					projectProblems.add(
 						ConfigFileProblem(
-							"Malformed Avail project config" +
-								" file, $CONFIG_FILE_NAME; malformed " +
-								AvailProjectV1::roots.name +
-								" object at position $i"))
+							"Malformed Avail project config"
+								+ " file, $CONFIG_FILE_NAME; malformed "
+								+ AvailProjectV1::roots.name
+								+ " object at position $i"))
+					null
 				}
+			}.associateTo(mutableMapOf()) { it }
+			val stylesheet = jsonObject.getObjectOrNull(
+				AvailProjectV1::stylesheet.name
+			)?.let { o ->
+				o.map { (rule, attributes) ->
+					rule to StyleAttributes(attributes as JSONObject)
+				}.associate { it }
+			} ?: mapOf()
+			val copyright = jsonObject.getString(
+				AvailProjectV1::projectCopyright.name
+			) { "" }
+			if (projectProblems.isNotEmpty())
+			{
+				throw AvailProjectException(projectProblems)
 			}
-			//TODO Report projectProblems
-			return project
+			return AvailProjectV1(
+				name,
+				darkMode,
+				repoLocation,
+				id,
+				roots,
+				templates = templates,
+				projectCopyright = copyright,
+				stylesheet = stylesheet
+			)
 		}
 	}
 }
+
+/**
+ * An [AvailProjectException] is raised by a [factory][AvailProjectV1] that
+ * creates an [AvailProject] from a persistent representation.
+ *
+ * @author Todd L Smith &lt;todd@availlang.org&gt;
+ */
+data class AvailProjectException constructor(
+	val problems: List<ProjectProblem>
+): Exception()

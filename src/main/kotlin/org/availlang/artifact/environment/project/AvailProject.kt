@@ -1,5 +1,5 @@
 /*
- * AvailProjectConfiguration.kt
+ * AvailProject.kt
  * Copyright © 1993-2022, The Avail Foundation, LLC.
  * All rights reserved.
  *
@@ -90,6 +90,9 @@ interface AvailProject: JSONFriendly
 	 * appear in each expansion.
 	 */
 	val templates: Map<String, String>
+
+	/** The project-specific stylesheet, overriding any root stylesheets. */
+	val stylesheet: Map<String, StyleAttributes>
 
 	/**
 	 * The copyright to prepend to new Avail modules by default.
