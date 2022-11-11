@@ -43,26 +43,30 @@ import java.util.UUID
 /**
  * Describes [AvailProject.serializationVersion] 1 of an [AvailProject].
  *
- * @author Richard Arriaga
- *
- * @constructor
- * Construct an [AvailProjectV1].
- *
- * @param name
+ * @property name
  *   The name of the Avail project.
- * @param darkMode
+ * @property darkMode
  *   `true` indicates use of Avail Workbench's dark mode; `false` for light
  *   mode.
- * @param repositoryLocation
+ * @property repositoryLocation
  *   The [AvailLocation] for the Avail repository where a persistent Avail
  *   indexed file of compiled modules are stored.
- * @param id
+ * @property id
  *   The id that uniquely identifies the project.
- * @param roots
+ * @property roots
  *   The map of [AvailProjectRoot.name] to [AvailProjectRoot].
- * @param templates
+ * @property templates
  *   The templates that should be available when editing Avail source modules
  *   in the workbench.
+ * @property projectCopyright
+ *   The copyright to prepend to new Avail modules in this project.
+ * @property palette
+ *   The [Palette] for the accompanying stylesheet, against which symbolic names
+ *   are resolved.
+ * @property stylesheet
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
+ * @author Richard Arriaga
  */
 class AvailProjectV1 constructor(
 	override val name: String,
@@ -72,6 +76,7 @@ class AvailProjectV1 constructor(
 	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf(),
 	override val templates: Map<String, String> = mutableMapOf(),
 	override var projectCopyright: String = "",
+	override val palette: Palette = Palette.empty,
 	override val stylesheet: Map<String, StyleAttributes> = mutableMapOf()
 ): AvailProject
 {
@@ -100,6 +105,10 @@ class AvailProjectV1 constructor(
 					}
 				}
 			}
+			if (palette.isNotEmpty)
+			{
+				at(::palette.name) { write(palette) }
+			}
 			if (stylesheet.isNotEmpty())
 			{
 				at(::stylesheet.name) {
@@ -127,30 +136,30 @@ class AvailProjectV1 constructor(
 		 *
 		 * @param projectDirectory
 		 *   The root directory of the project.
-		 * @param jsonObject
+		 * @param obj
 		 *   The `JSONObject` that contains the `ProjectDescriptor` data.
 		 * @return
 		 *   The extracted `ProjectDescriptor`.
 		 */
 		fun from (
 			projectDirectory: String,
-			jsonObject: JSONObject
+			obj: JSONObject
 		): AvailProjectV1
 		{
-			val id = jsonObject.getString(AvailProjectV1::id.name)
-			val name = jsonObject.getString(AvailProjectV1::name.name)
-			val darkMode = jsonObject.getBoolean(AvailProjectV1::darkMode.name)
+			val id = obj.getString(AvailProjectV1::id.name)
+			val name = obj.getString(AvailProjectV1::name.name)
+			val darkMode = obj.getBoolean(AvailProjectV1::darkMode.name)
 			val repoLocation = AvailLocation.from(
 				projectDirectory,
-				jsonObject.getObject(AvailProjectV1::repositoryLocation.name))
-			val templates =  jsonObject.getObjectOrNull(
+				obj.getObject(AvailProjectV1::repositoryLocation.name))
+			val templates =  obj.getObjectOrNull(
 				AvailProjectV1::templates.name
 			)?.let { o ->
 				o.map { (name, expansion) -> name to expansion.string }
 					.associate { it }
 			} ?: mapOf()
 			val projectProblems = mutableListOf<ProjectProblem>()
-			val roots = jsonObject.getArray(
+			val roots = obj.getArray(
 				AvailProjectV1::roots.name
 			).mapIndexedNotNull { i, it ->
 				val rootObj = it as? JSONObject ?: run {
@@ -182,14 +191,19 @@ class AvailProjectV1 constructor(
 					null
 				}
 			}.associateTo(mutableMapOf()) { it }
-			val stylesheet = jsonObject.getObjectOrNull(
+			val palette = obj.getObjectOrNull(
+				AvailProjectV1::palette.name
+			)?.let {
+				Palette.from(it)
+			} ?: Palette.empty
+			val stylesheet = obj.getObjectOrNull(
 				AvailProjectV1::stylesheet.name
 			)?.let { o ->
 				o.map { (rule, attributes) ->
 					rule to StyleAttributes(attributes as JSONObject)
 				}.associate { it }
 			} ?: mapOf()
-			val copyright = jsonObject.getString(
+			val copyright = obj.getString(
 				AvailProjectV1::projectCopyright.name
 			) { "" }
 			if (projectProblems.isNotEmpty())
@@ -197,13 +211,14 @@ class AvailProjectV1 constructor(
 				throw AvailProjectException(projectProblems)
 			}
 			return AvailProjectV1(
-				name,
-				darkMode,
-				repoLocation,
-				id,
-				roots,
+				name = name,
+				darkMode = darkMode,
+				repositoryLocation = repoLocation,
+				id = id,
+				roots = roots,
 				templates = templates,
 				projectCopyright = copyright,
+				palette = palette,
 				stylesheet = stylesheet
 			)
 		}

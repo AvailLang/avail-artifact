@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "org.availlang"
-version = "2.0.0.alpha12"
+version = "2.0.0.alpha13"
 
 repositories {
     mavenLocal()

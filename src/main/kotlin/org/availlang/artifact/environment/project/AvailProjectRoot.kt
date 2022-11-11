@@ -34,8 +34,12 @@ import java.util.*
  * @property visible
  *   `true` indicates the root is intended to be displayed; `false` indicates
  *   the root should not be visible by default.
+ * @property palette
+ *   The [Palette] for the accompanying stylesheet, against which symbolic names
+ *   are resolved.
  * @property stylesheet
- *   The default stylesheet for this root.
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
  */
 class AvailProjectRoot constructor(
 	val projectDirectory: String,
@@ -47,6 +51,7 @@ class AvailProjectRoot constructor(
 	val id: String = UUID.randomUUID().toString(),
 	var rootCopyright: String = "",
 	var visible: Boolean = true,
+	val palette: Palette = Palette.empty,
 	val stylesheet: Map<String, StyleAttributes> = mapOf()
 ): JSONFriendly
 {
@@ -78,6 +83,10 @@ class AvailProjectRoot constructor(
 						}
 					}
 				}
+			}
+			if (palette.isNotEmpty)
+			{
+				at(::palette.name) { write(palette) }
 			}
 			if (stylesheet.isNotEmpty())
 			{
@@ -116,22 +125,34 @@ class AvailProjectRoot constructor(
 			obj: JSONObject,
 			@Suppress("UNUSED_PARAMETER") serializationVersion: Int
 		) = AvailProjectRoot(
-			projectDirectory,
-			obj.getString(AvailProjectRoot::name.name),
-			AvailLocation.from(
+			projectDirectory =projectDirectory,
+			name = obj.getString(AvailProjectRoot::name.name),
+			location = AvailLocation.from(
 				projectDirectory,
 				obj.getObject(AvailProjectRoot::location.name)),
-			obj.getArray(AvailProjectRoot::availModuleExtensions.name).strings,
-			obj.getObjectOrNull(AvailProjectRoot::templates.name)?.let {
+			availModuleExtensions = obj.getArray(
+				AvailProjectRoot::availModuleExtensions.name).strings,
+			templates = obj.getObjectOrNull(
+				AvailProjectRoot::templates.name
+			)?.let {
 				it.associateTo(mutableMapOf()) { (name, expansion) ->
 					name to expansion.string
 				}
 			} ?: mapOf(),
-			obj.getBoolean(AvailProjectRoot::editable.name),
-			obj.getString(AvailProjectRoot::id.name),
-			obj.getString(AvailProjectRoot::rootCopyright.name) { "" },
-			obj.getBoolean(AvailProjectRoot::visible.name) { true },
-			obj.getObjectOrNull(AvailProjectRoot::stylesheet.name)?.let {
+			editable = obj.getBoolean(AvailProjectRoot::editable.name),
+			id = obj.getString(AvailProjectRoot::id.name),
+			rootCopyright = obj.getString(
+				AvailProjectRoot::rootCopyright.name
+			) { "" },
+			visible = obj.getBoolean(AvailProjectRoot::visible.name) { true },
+			palette = obj.getObjectOrNull(
+				AvailProjectRoot::palette.name
+			)?.let {
+				Palette.from(it)
+			} ?: Palette.empty,
+			stylesheet = obj.getObjectOrNull(
+				AvailProjectRoot::stylesheet.name
+			)?.let {
 				it.associateTo(mutableMapOf()) { (rule, attributes) ->
 					rule to StyleAttributes(attributes as JSONObject)
 				}

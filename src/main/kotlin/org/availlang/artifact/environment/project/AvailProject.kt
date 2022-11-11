@@ -91,6 +91,11 @@ interface AvailProject: JSONFriendly
 	 */
 	val templates: Map<String, String>
 
+	/**
+	 * The project-specified [palette]][Palette], overriding any root palettes.
+	 */
+	val palette: Palette
+
 	/** The project-specific stylesheet, overriding any root stylesheets. */
 	val stylesheet: Map<String, StyleAttributes>
 
