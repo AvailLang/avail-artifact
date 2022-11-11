@@ -71,8 +71,11 @@ class AvailProjectRoot constructor(
 			at(::editable.name) { write(editable) }
 			at(::visible.name) { write(visible) }
 			at(::location.name) { location.writeTo(this@writeObject) }
-			at(::availModuleExtensions.name) {
-				writeStrings(availModuleExtensions)
+			if (availModuleExtensions != listOf("avail"))
+			{
+				at(::availModuleExtensions.name) {
+					writeStrings(availModuleExtensions)
+				}
 			}
 			if (templates.isNotEmpty())
 			{
@@ -125,13 +128,15 @@ class AvailProjectRoot constructor(
 			obj: JSONObject,
 			@Suppress("UNUSED_PARAMETER") serializationVersion: Int
 		) = AvailProjectRoot(
-			projectDirectory =projectDirectory,
+			projectDirectory = projectDirectory,
 			name = obj.getString(AvailProjectRoot::name.name),
 			location = AvailLocation.from(
 				projectDirectory,
-				obj.getObject(AvailProjectRoot::location.name)),
-			availModuleExtensions = obj.getArray(
-				AvailProjectRoot::availModuleExtensions.name).strings,
+				obj.getObject(AvailProjectRoot::location.name)
+			),
+			availModuleExtensions = obj.getArrayOrNull(
+				AvailProjectRoot::availModuleExtensions.name
+			)?.strings ?: listOf("avail"),
 			templates = obj.getObjectOrNull(
 				AvailProjectRoot::templates.name
 			)?.let {
@@ -139,7 +144,9 @@ class AvailProjectRoot constructor(
 					name to expansion.string
 				}
 			} ?: mapOf(),
-			editable = obj.getBoolean(AvailProjectRoot::editable.name),
+			editable = obj.getBoolean(
+				AvailProjectRoot::editable.name
+			) { false },
 			id = obj.getString(AvailProjectRoot::id.name),
 			rootCopyright = obj.getString(
 				AvailProjectRoot::rootCopyright.name

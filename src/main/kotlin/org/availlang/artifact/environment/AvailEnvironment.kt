@@ -1,6 +1,7 @@
 package org.availlang.artifact.environment
 
 import java.io.File
+import java.lang.System.getenv
 
 /**
  * Contains state and behavior for managing the Avail environment on a computer.
@@ -14,8 +15,8 @@ object AvailEnvironment
 	 * The Avail home directory inside the user's home directory.
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
-	val availHome: String get() =
-		"${System.getProperty("user.home")}${File.separator}.avail"
+	val availHome: String get() = getenv("AVAIL_HOME")
+		?: "${System.getProperty("user.home")}${File.separator}.avail"
 
 	/**
 	 * The repositories directory inside the [Avail home directory][availHome]

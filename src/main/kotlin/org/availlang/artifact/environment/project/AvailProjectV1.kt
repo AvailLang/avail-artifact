@@ -148,7 +148,8 @@ class AvailProjectV1 constructor(
 		{
 			val id = obj.getString(AvailProjectV1::id.name)
 			val name = obj.getString(AvailProjectV1::name.name)
-			val darkMode = obj.getBoolean(AvailProjectV1::darkMode.name)
+			val darkMode = obj.getBooleanOrNull(AvailProjectV1::darkMode.name)
+				?: true
 			val repoLocation = AvailLocation.from(
 				projectDirectory,
 				obj.getObject(AvailProjectV1::repositoryLocation.name))
