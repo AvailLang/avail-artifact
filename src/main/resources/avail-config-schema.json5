@@ -1,5 +1,5 @@
 {
-	$id: "https://github.com/AvailLang/avail-artifact/tree/main/src/main/resources/avail-config-schema.json5",
+	$id: "https://raw.githubusercontent.com/AvailLang/avail-artifact/main/src/main/resources/avail-config-schema.json5",
 	$schema: "http://json-schema.org/draft-07/schema#",
 	title: "avail-config",
 	description: "The schema for Avail configuration files, normatively but \
@@ -144,7 +144,7 @@
 			minProperties: 1,
 			additionalProperties: {
 				type: "string",
-				pattern: "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})(/[0-9A-Fa-f]{6}([0-9A-Fa-f]{2}))$",
+				pattern: "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})(/[0-9A-Fa-f]{6}([0-9A-Fa-f]{2}))?$",
 				description: "Each symbolic name is bound to a light/dark \
 					color pair of the form #rrggbbaa/#rrggbbaa, where the \
 					first group (between the octothorp and the solidus) is the \
