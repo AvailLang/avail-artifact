@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toUpperCaseAsciiOnly
 
 plugins {
-    kotlin("jvm") version "1.7.0"
+    kotlin("jvm") version "1.7.21"
     `maven-publish`
     publishing
     signing
@@ -20,7 +20,7 @@ repositories {
 }
 
 val targetJVM = 17
-val kotlinLanguage = 1.6
+val kotlinLanguage = 1.7
 
 java {
     toolchain {
