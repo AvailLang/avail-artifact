@@ -162,9 +162,10 @@
 			description: "The stylesheet maps a collection of rules onto the \
 				concrete style attributes that should be applied whenever the \
 				rule matches (and is not overridden).",
+			additionalProperties: false,
 			minProperties: 1,
 			patternProperties: {
-				"^(=#[A-Za-z0-9-]+(,#[A-Za-z0-9-]+)*)|(#[A-Za-z0-9-]+([<,]#[A-Za-z0-9-]+)*)$": {
+				"^(=(#[A-Za-z0-9-]+(,#[A-Za-z0-9-]+)*)?)|(#[A-Za-z0-9-]+([<,]#[A-Za-z0-9-]+)*)$": {
 					$ref: "#styleAttributes",
 					description: "Each rule is bound to the style attributes \
 						that should be applied whenever the rule matches and \
@@ -181,19 +182,19 @@
 						[U+002D]. A term matches its lexically identical \
 						style classifier exactly. \
 						\
-						The sequence operator is comma (,) [U+002C]. The \
-						sequence operator matches if the right term follows \
+						The succession operator is comma (,) [U+002C]. The \
+						succession operator matches if the right term follows \
 						the left term without any interleaving terms. \
 						\
-						The eventual succession operator is less-than sign (<) \
-						[U+003C]. The eventual succession operator matches if \
+						The eventual subsequence operator is less-than sign (<) \
+						[U+003C]. The eventual subsequence operator matches if \
 						the right term occurs anywhere after the left term, \
 						irrespective of the absence or presence of \
 						interleaving terms. \
 						\
 						An exact match rule begins with equals \
 						sign (=) [U+003D]. It must match exactly, and must not \
-						contain any operators other than the sequence \
+						contain any operators other than the succession \
 						operator. All other rules are fuzzy match rules. \
 						\
 						A more specific rule always overrides a more general \
