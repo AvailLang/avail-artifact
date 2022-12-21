@@ -94,9 +94,9 @@ open class AvailRoot constructor(
 	val name: String,
 	val location: AvailLocation,
 	val digestAlgorithm: String = "SHA-256",
-	val availModuleExtensions: List<String> = listOf("avail"),
-	val entryPoints: List<String> = listOf(),
-	val templates: Map<String, String> = mapOf(),
+	val availModuleExtensions: MutableList<String> = mutableListOf("avail"),
+	val entryPoints: MutableList<String> = mutableListOf(),
+	val templates: MutableMap<String, String> = mutableMapOf(),
 	val description: String = "",
 	var action: (AvailRoot) -> Unit = {}
 ) : Comparable<AvailRoot>

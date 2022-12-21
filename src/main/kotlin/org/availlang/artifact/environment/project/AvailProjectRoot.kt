@@ -45,8 +45,8 @@ class AvailProjectRoot constructor(
 	val projectDirectory: String,
 	var name: String,
 	var location: AvailLocation,
-	val availModuleExtensions: List<String> = listOf("avail"),
-	val templates: Map<String, String> = mapOf(),
+	val availModuleExtensions: MutableList<String> = mutableListOf("avail"),
+	val templates: MutableMap<String, String> = mutableMapOf(),
 	var editable: Boolean = location.editable,
 	val id: String = UUID.randomUUID().toString(),
 	var rootCopyright: String = "",
@@ -136,14 +136,14 @@ class AvailProjectRoot constructor(
 			),
 			availModuleExtensions = obj.getArrayOrNull(
 				AvailProjectRoot::availModuleExtensions.name
-			)?.strings ?: listOf("avail"),
+			)?.strings?.toMutableList() ?: mutableListOf("avail"),
 			templates = obj.getObjectOrNull(
 				AvailProjectRoot::templates.name
 			)?.let {
 				it.associateTo(mutableMapOf()) { (name, expansion) ->
 					name to expansion.string
 				}
-			} ?: mapOf(),
+			} ?: mutableMapOf(),
 			editable = obj.getBoolean(
 				AvailProjectRoot::editable.name
 			) { false },

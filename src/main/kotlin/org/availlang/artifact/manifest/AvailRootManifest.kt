@@ -31,9 +31,9 @@ import java.security.MessageDigest
  */
 data class AvailRootManifest constructor(
 	val name: String,
-	val availModuleExtensions: List<String>,
-	val entryPoints: List<String> = listOf(),
-	val templates: Map<String, String> = mapOf(),
+	val availModuleExtensions: MutableList<String>,
+	val entryPoints: MutableList<String> = mutableListOf(),
+	val templates: MutableMap<String, String> = mutableMapOf(),
 	val description: String = "",
 	val digestAlgorithm: String = "SHA-256"
 ): JSONFriendly
@@ -109,7 +109,9 @@ data class AvailRootManifest constructor(
 				try
 				{
 					obj.getArray(
-						AvailRootManifest::availModuleExtensions.name).strings
+						AvailRootManifest::availModuleExtensions.name
+					).strings.toMutableList()
+
 				}
 				catch (e: Throwable)
 				{
@@ -121,7 +123,9 @@ data class AvailRootManifest constructor(
 			val entryPoints =
 				try
 				{
-					obj.getArray(AvailRootManifest::entryPoints.name).strings
+					obj.getArray(
+						AvailRootManifest::entryPoints.name
+					).strings.toMutableList()
 				}
 				catch (e: Throwable)
 				{

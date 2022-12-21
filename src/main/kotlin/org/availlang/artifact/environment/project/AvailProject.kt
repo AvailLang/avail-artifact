@@ -89,7 +89,7 @@ interface AvailProject: JSONFriendly
 	 * inputs) to template expansions. Zero or one caret insertion (⁁) may
 	 * appear in each expansion.
 	 */
-	val templates: Map<String, String>
+	val templates: MutableMap<String, String>
 
 	/**
 	 * The project-specified [palette]][Palette], overriding any root palettes.

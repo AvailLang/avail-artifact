@@ -38,9 +38,9 @@ class CreateAvailRoot constructor(
 	name: String,
 	location: AvailLocation,
 	digestAlgorithm: String = "SHA-256",
-	availModuleExtensions: List<String> = listOf("avail"),
-	entryPoints: List<String> = listOf(),
-	templates: Map<String, String> = mapOf(),
+	availModuleExtensions: MutableList<String> = mutableListOf("avail"),
+	entryPoints: MutableList<String> = mutableListOf(),
+	templates: MutableMap<String, String> = mutableMapOf(),
 	description: String = "",
 	action: (AvailRoot) -> Unit = {}
 ) : AvailRoot(

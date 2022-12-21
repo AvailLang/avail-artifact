@@ -74,7 +74,7 @@ class AvailProjectV1 constructor(
 	override val repositoryLocation: AvailLocation,
 	override val id: String = UUID.randomUUID().toString(),
 	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf(),
-	override val templates: Map<String, String> = mutableMapOf(),
+	override val templates: MutableMap<String, String> = mutableMapOf(),
 	override var projectCopyright: String = "",
 	override val palette: Palette = Palette.empty,
 	override val stylesheet: Map<String, StyleAttributes> = mutableMapOf()
@@ -158,7 +158,7 @@ class AvailProjectV1 constructor(
 			)?.let { o ->
 				o.map { (name, expansion) -> name to expansion.string }
 					.associate { it }
-			} ?: mapOf()
+			}?.toMutableMap() ?: mutableMapOf()
 			val projectProblems = mutableListOf<ProjectProblem>()
 			val roots = obj.getArray(
 				AvailProjectV1::roots.name
