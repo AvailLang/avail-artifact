@@ -206,15 +206,15 @@ class Palette constructor(
  * @author Todd L Smith &lt;todd@availlang.org&gt;
  */
 data class StyleAttributes constructor(
-	val fontFamily: String?,
-	val foreground: String?,
-	val background: String?,
-	val bold: Boolean?,
-	val italic: Boolean?,
-	val underline: Boolean?,
-	val superscript: Boolean?,
-	val subscript: Boolean?,
-	val strikethrough: Boolean?
+	val fontFamily: String? = null,
+	val foreground: String? = null,
+	val background: String? = null,
+	val bold: Boolean? = null,
+	val italic: Boolean? = null,
+	val underline: Boolean? = null,
+	val superscript: Boolean? = null,
+	val subscript: Boolean? = null,
+	val strikethrough: Boolean? = null
 ): JSONFriendly
 {
 	constructor(data: JSONObject): this(
