@@ -199,7 +199,16 @@
 						\
 						A more specific rule always overrides a more general \
 						rule, so, e.g., a rule #foo<#bar overrides either/both \
-						of rules #foo and #bar."
+						of rules #foo and #bar.\
+						\
+						The special rule comprising only equals (=) [U+003D] \
+						declares how to render unclassified regions of text, \
+						i.e., regions to which no style classifiers have been \
+						attached.\
+						\
+						The special rule comprising only exclamation mark (!) \
+						[U+0021] declares how to render regions of text that \
+						do not conform to any rule."
 				}
 			}
 		},
