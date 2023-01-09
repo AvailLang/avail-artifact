@@ -2,6 +2,9 @@ package org.availlang.artifact.manifest
 
 import org.availlang.artifact.AvailArtifact
 import org.availlang.artifact.AvailArtifactException
+import org.availlang.artifact.environment.project.Palette
+import org.availlang.artifact.environment.project.StyleAttributes
+import org.availlang.artifact.environment.project.TemplateExpansion
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -22,6 +25,9 @@ import java.security.MessageDigest
  * @property templates
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
+ * @property stylesheet
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
  * @property description
  *   A description of the root.
  * @property digestAlgorithm
@@ -33,7 +39,8 @@ data class AvailRootManifest constructor(
 	val name: String,
 	val availModuleExtensions: MutableList<String>,
 	val entryPoints: MutableList<String> = mutableListOf(),
-	val templates: MutableMap<String, String> = mutableMapOf(),
+	val templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
+	val stylesheet: Map<String, StyleAttributes> = mutableMapOf(),
 	val description: String = "",
 	val digestAlgorithm: String = "SHA-256"
 ): JSONFriendly
@@ -52,6 +59,13 @@ data class AvailRootManifest constructor(
 				writeObject {
 					templates.forEach { (name, expansion) ->
 						at(name) { write(expansion) }
+					}
+				}
+			}
+			at(::stylesheet.name) {
+				writeObject {
+					stylesheet.forEach { (name, attribute) ->
+						at(name) { write(attribute) }
 					}
 				}
 			}
@@ -133,7 +147,7 @@ data class AvailRootManifest constructor(
 						"Problem extracting Avail Manifest Root entry points.",
 						e)
 				}
-			val templates = mutableMapOf<String, String>()
+			val templates = mutableMapOf<String, TemplateExpansion>()
 			try
 			{
 				val key = AvailRootManifest::templates.name
@@ -141,7 +155,7 @@ data class AvailRootManifest constructor(
 				{
 					obj.getObject(key).associateTo(templates) {
 							(name, expansion) ->
-						name to expansion.string
+						name to TemplateExpansion(expansion as JSONObject)
 					}
 				}
 			}

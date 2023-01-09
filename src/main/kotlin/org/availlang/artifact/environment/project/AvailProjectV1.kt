@@ -55,9 +55,6 @@ import java.util.UUID
  *   The id that uniquely identifies the project.
  * @property roots
  *   The map of [AvailProjectRoot.name] to [AvailProjectRoot].
- * @property templates
- *   The templates that should be available when editing Avail source modules
- *   in the workbench.
  * @property projectCopyright
  *   The copyright to prepend to new Avail modules in this project.
  * @property palette
@@ -74,7 +71,6 @@ class AvailProjectV1 constructor(
 	override val repositoryLocation: AvailLocation,
 	override val id: String = UUID.randomUUID().toString(),
 	override val roots: MutableMap<String, AvailProjectRoot> = mutableMapOf(),
-	override val templates: MutableMap<String, String> = mutableMapOf(),
 	override var projectCopyright: String = "",
 	override val palette: Palette = Palette.empty,
 	override val stylesheet: Map<String, StyleAttributes> = mutableMapOf()
@@ -95,16 +91,6 @@ class AvailProjectV1 constructor(
 				write(repositoryLocation)
 			}
 			at(::roots.name) { writeArray(availProjectRoots) }
-			if (templates.isNotEmpty())
-			{
-				at(::templates.name) {
-					writeObject {
-						templates.forEach { (name, expansion) ->
-							at(name) { write(expansion) }
-						}
-					}
-				}
-			}
 			if (palette.isNotEmpty)
 			{
 				at(::palette.name) { write(palette) }
@@ -153,12 +139,6 @@ class AvailProjectV1 constructor(
 			val repoLocation = AvailLocation.from(
 				projectDirectory,
 				obj.getObject(AvailProjectV1::repositoryLocation.name))
-			val templates =  obj.getObjectOrNull(
-				AvailProjectV1::templates.name
-			)?.let { o ->
-				o.map { (name, expansion) -> name to expansion.string }
-					.associate { it }
-			}?.toMutableMap() ?: mutableMapOf()
 			val projectProblems = mutableListOf<ProjectProblem>()
 			val roots = obj.getArray(
 				AvailProjectV1::roots.name
@@ -217,7 +197,6 @@ class AvailProjectV1 constructor(
 				repositoryLocation = repoLocation,
 				id = id,
 				roots = roots,
-				templates = templates,
 				projectCopyright = copyright,
 				palette = palette,
 				stylesheet = stylesheet

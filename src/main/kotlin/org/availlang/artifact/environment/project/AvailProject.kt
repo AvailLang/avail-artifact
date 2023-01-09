@@ -84,14 +84,6 @@ interface AvailProject: JSONFriendly
 	val roots: MutableMap<String, AvailProjectRoot>
 
 	/**
-	 * The templates that should be available when editing Avail source modules
-	 * in the workbench, as a map from template names (corresponding to user
-	 * inputs) to template expansions. Zero or one caret insertion (⁁) may
-	 * appear in each expansion.
-	 */
-	val templates: MutableMap<String, String>
-
-	/**
 	 * The project-specified [palette]][Palette], overriding any root palettes.
 	 */
 	val palette: Palette

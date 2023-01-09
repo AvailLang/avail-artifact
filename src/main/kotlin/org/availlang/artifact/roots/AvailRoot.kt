@@ -35,6 +35,9 @@ package org.availlang.artifact.roots
 import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.environment.project.AvailProject
 import org.availlang.artifact.environment.project.AvailProjectRoot
+import org.availlang.artifact.environment.project.Palette
+import org.availlang.artifact.environment.project.StyleAttributes
+import org.availlang.artifact.environment.project.TemplateExpansion
 import org.availlang.artifact.manifest.AvailRootManifest
 import java.security.MessageDigest
 
@@ -59,6 +62,9 @@ import java.security.MessageDigest
  * @property templates
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
+ * @property stylesheet
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
  * @property description
  *   An optional description of the root.
  * @property action
@@ -84,6 +90,9 @@ import java.security.MessageDigest
  * @param templates
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
+ * @param stylesheet
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
  * @param description
  *   An optional description of the root.
  * @param action
@@ -96,7 +105,8 @@ open class AvailRoot constructor(
 	val digestAlgorithm: String = "SHA-256",
 	val availModuleExtensions: MutableList<String> = mutableListOf("avail"),
 	val entryPoints: MutableList<String> = mutableListOf(),
-	val templates: MutableMap<String, String> = mutableMapOf(),
+	val templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
+	val stylesheet: Map<String, StyleAttributes> = mapOf(),
 	val description: String = "",
 	var action: (AvailRoot) -> Unit = {}
 ) : Comparable<AvailRoot>
@@ -124,6 +134,7 @@ open class AvailRoot constructor(
 		manifestRoot.availModuleExtensions,
 		manifestRoot.entryPoints,
 		manifestRoot.templates,
+		manifestRoot.stylesheet,
 		manifestRoot.description,
 		action)
 
@@ -151,6 +162,7 @@ open class AvailRoot constructor(
 			availModuleExtensions,
 			entryPoints,
 			templates,
+			stylesheet,
 			description,
 			digestAlgorithm)
 

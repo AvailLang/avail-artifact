@@ -111,27 +111,51 @@
 				project.",
 			default: ""
 		},
+		template: {
+			$id: "#template",
+			type: "object",
+			description: "The content of a template.",
+			properties: {
+				expansion: {
+					type: "string",
+					description: "The expanded template."
+				},
+				markedForArtifactInclusion: {
+					type: "boolean",
+					description: "Whether to include the template in an Avail \
+					artifact with its associated root"
+				},
+				description: {
+					type: "string",
+					description: "An optional description of the template."
+				}
+			},
+			required: [
+				"expansion",
+				"markedForArtifactInclusion",
+			]
+		},
 		templates: {
 			$id: "#templates",
 			type: "object",
 			description: "The live templates available for substitution in an \
-				Anvil editor. Avail uses many untypable Unicode characters, so \
-				live templates provides essential ergonomic support for \
-				reaching essential characters conveniently. Every root is \
-				encouraged to provide live templates to support any \
-				tricky-to-type patterns that it introduces.",
+			Anvil editor. Avail uses many untypable Unicode characters, so \
+			live templates provides essential ergonomic support for \
+			reaching essential characters conveniently. Every root is \
+			encouraged to provide live templates to support any \
+			tricky-to-type patterns that it introduces.",
 			minProperties: 1,
 			additionalProperties: {
-				type: "string",
+				$ref: "#template",
 				description: "Each live template binds an symbolic name to a \
-					substitution. The user must enter a prefix of the symbolic \
-					name and then use an appropriate keyboard accelerator to \
-					activate the substitution. Repeatedly using the \
-					accelerator cycles through all live templates that share \
-					the same longest prefix up to the caret. If a substitution \
-					contains a caret insertion point (⁁) [U+2041], then the \
-					substitution will move the caret forward to the position \
-					of this character (and erase or highlight the character)."
+				substitution. The user must enter a prefix of the symbolic \
+				name and then use an appropriate keyboard accelerator to \
+				activate the substitution. Repeatedly using the \
+				accelerator cycles through all live templates that share \
+				the same longest prefix up to the caret. If a substitution \
+				contains a caret insertion point (⁁) [U+2041], then the \
+				substitution will move the caret forward to the position \
+				of this character (and erase or highlight the character)."
 			}
 		},
 		palette: {
