@@ -2,6 +2,8 @@ package org.availlang.artifact.manifest
 
 import org.availlang.artifact.AvailArtifact
 import org.availlang.artifact.AvailArtifactException
+import org.availlang.artifact.environment.project.Palette
+import org.availlang.artifact.environment.project.StyleAttributes
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -22,6 +24,9 @@ import java.security.MessageDigest
  * @property templates
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
+ * @property stylesheet
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
  * @property description
  *   A description of the root.
  * @property digestAlgorithm
@@ -34,6 +39,7 @@ data class AvailRootManifest constructor(
 	val availModuleExtensions: MutableList<String>,
 	val entryPoints: MutableList<String> = mutableListOf(),
 	val templates: MutableMap<String, String> = mutableMapOf(),
+	val stylesheet: Map<String, StyleAttributes> = mutableMapOf(),
 	val description: String = "",
 	val digestAlgorithm: String = "SHA-256"
 ): JSONFriendly
@@ -52,6 +58,13 @@ data class AvailRootManifest constructor(
 				writeObject {
 					templates.forEach { (name, expansion) ->
 						at(name) { write(expansion) }
+					}
+				}
+			}
+			at(::stylesheet.name) {
+				writeObject {
+					stylesheet.forEach { (name, attribute) ->
+						at(name) { write(attribute) }
 					}
 				}
 			}

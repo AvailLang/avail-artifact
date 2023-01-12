@@ -1,6 +1,8 @@
 package org.availlang.artifact.roots
 
 import org.availlang.artifact.environment.location.AvailLocation
+import org.availlang.artifact.environment.project.Palette
+import org.availlang.artifact.environment.project.StyleAttributes
 import org.availlang.artifact.manifest.AvailRootManifest
 import java.security.MessageDigest
 
@@ -28,6 +30,9 @@ import java.security.MessageDigest
  * @param templates
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
+ * @param stylesheet
+ *   The default stylesheet for this root. Symbolic names are resolved against
+ *   the accompanying [Palette].
  * @param description
  *   An optional description of the root.
  * @param action
@@ -41,6 +46,7 @@ class CreateAvailRoot constructor(
 	availModuleExtensions: MutableList<String> = mutableListOf("avail"),
 	entryPoints: MutableList<String> = mutableListOf(),
 	templates: MutableMap<String, String> = mutableMapOf(),
+	stylesheet: Map<String, StyleAttributes> = mapOf(),
 	description: String = "",
 	action: (AvailRoot) -> Unit = {}
 ) : AvailRoot(
@@ -50,6 +56,7 @@ class CreateAvailRoot constructor(
 	availModuleExtensions,
 	entryPoints,
 	templates,
+	stylesheet,
 	description,
 	action)
 {
@@ -64,6 +71,7 @@ class CreateAvailRoot constructor(
 	 *   A lambda that accepts this [AvailRoot] and is executed after all roots have
 	 *   been added.
 	 */
+	@Suppress("unused")
 	constructor(
 		location: AvailLocation,
 		manifestRoot: AvailRootManifest,
@@ -75,6 +83,7 @@ class CreateAvailRoot constructor(
 		manifestRoot.availModuleExtensions,
 		manifestRoot.entryPoints,
 		manifestRoot.templates,
+		manifestRoot.stylesheet,
 		manifestRoot.description,
 		action)
 
