@@ -3,6 +3,7 @@
 package org.availlang.artifact.environment.project
 
 import org.availlang.artifact.environment.location.AvailLocation
+import org.availlang.artifact.manifest.AvailRootManifest
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -62,6 +63,20 @@ class AvailProjectRoot constructor(
 	 */
 	@Suppress("unused")
 	val modulePath: String = "$name=${location.fullPath}"
+
+	/**
+	 * Create an [AvailRootManifest] from this [AvailProjectRoot].
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	val manifest: AvailRootManifest
+		get() =
+		AvailRootManifest(
+			name,
+			availModuleExtensions,
+			templates = templates
+				.filter { it.value.markedForArtifactInclusion }
+				.toMutableMap(),
+			stylesheet = stylesheet)
 
 	override fun writeTo(writer: JSONWriter)
 	{

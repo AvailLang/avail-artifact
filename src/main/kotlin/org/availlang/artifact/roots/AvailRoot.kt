@@ -161,7 +161,9 @@ open class AvailRoot constructor(
 			name,
 			availModuleExtensions,
 			entryPoints,
-			templates,
+			templates
+				.filter { it.value.markedForArtifactInclusion }
+				.toMutableMap(),
 			stylesheet,
 			description,
 			digestAlgorithm)
