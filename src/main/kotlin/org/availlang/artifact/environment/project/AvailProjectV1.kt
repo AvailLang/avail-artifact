@@ -34,10 +34,15 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.AvailArtifactBuildPlan
 import org.availlang.artifact.environment.location.AvailLocation
+import org.availlang.artifact.environment.location.Scheme
 import org.availlang.artifact.environment.project.AvailProject.Companion.CONFIG_FILE_NAME
+import org.availlang.artifact.jar.AvailArtifactJar
+import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
+import java.net.URI
 import java.util.UUID
 
 /**
@@ -78,6 +83,12 @@ class AvailProjectV1 constructor(
 {
 	override val serializationVersion = AvailProjectV1.serializationVersion
 
+	override val manifestMap: MutableMap<String, AvailArtifactManifest> =
+		mutableMapOf()
+
+	override val artifactBuildPlans =
+		mutableListOf<AvailArtifactBuildPlan>()
+
 	override fun writeTo(writer: JSONWriter)
 	{
 		writer.writeObject {
@@ -105,8 +116,10 @@ class AvailProjectV1 constructor(
 					}
 				}
 			}
-			at(::projectCopyright.name) {
-				write(projectCopyright)
+			at(::projectCopyright.name) { write(projectCopyright) }
+			at(::artifactBuildPlans.name)
+			{
+				writeArray(artifactBuildPlans)
 			}
 		}
 	}
@@ -200,7 +213,28 @@ class AvailProjectV1 constructor(
 				projectCopyright = copyright,
 				palette = palette,
 				stylesheet = stylesheet
-			)
+			).apply {
+				roots.values.forEach {
+					if (it.location.scheme == Scheme.JAR)
+					{
+						it.location.let { loc ->
+							val l = loc.scheme.optionalPrefix +
+								loc.fullPathNoPrefix
+							manifestMap.computeIfAbsent(it.name) { _ ->
+								AvailArtifactJar(URI(l)).manifest
+							}.updateRoot(it)
+						}
+					}
+				}
+				obj.getArrayOrNull(::artifactBuildPlans.name)?.let {
+					it.forEach { jd ->
+						artifactBuildPlans.add(
+							AvailArtifactBuildPlan(
+								projectDirectory, jd as JSONObject)
+						)
+					}
+				}
+			}
 		}
 	}
 }

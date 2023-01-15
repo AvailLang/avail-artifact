@@ -2,10 +2,13 @@ package org.availlang.artifact.manifest
 
 import org.availlang.artifact.*
 import org.availlang.artifact.AvailArtifact.Companion.artifactRootDirectory
+import org.availlang.artifact.environment.project.AvailProjectRoot
+import org.availlang.artifact.environment.project.StyleAttributes
 import org.availlang.artifact.jar.JvmComponent
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.jsonPrettyPrintWriter
+import java.awt.Color
 import java.io.File
 import java.nio.charset.StandardCharsets
 
@@ -75,6 +78,38 @@ sealed interface AvailArtifactManifest: JSONFriendly
 	fun writeFile (targetFile: File)
 	{
 		targetFile.writeText(fileContent)
+	}
+
+	/**
+	 * Update the project templates and stylesheets for the given
+	 * [AvailProjectRoot] from this [AvailArtifactManifest] if root present in
+	 * manifest.
+	 *
+	 * @param root
+	 *   The [AvailProjectRoot] to update.
+	 */
+	fun updateRoot (root: AvailProjectRoot)
+	{
+		val u = roots[root.name] ?: return
+		if (!root.lockPalette)
+		{
+			(root.stylesheet as MutableMap<String, StyleAttributes>).apply {
+				clear()
+				putAll(u.stylesheet)
+			}
+			(root.palette.lightColors as MutableMap<String, Color>).apply {
+				clear()
+				putAll(u.palette.lightColors)
+			}
+			(root.palette.darkColors as MutableMap<String, Color>).apply {
+				clear()
+				putAll(u.palette.darkColors)
+			}
+		}
+		if (!root.lockTemplates)
+		{
+			root.templates.putAll(u.templates)
+		}
 	}
 
 	companion object

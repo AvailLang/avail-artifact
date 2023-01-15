@@ -32,6 +32,8 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.AvailArtifact
+import org.availlang.artifact.AvailArtifactBuildPlan
 import org.availlang.artifact.AvailArtifactException
 import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.manifest.AvailArtifactManifest
@@ -84,6 +86,11 @@ interface AvailProject: JSONFriendly
 	val roots: MutableMap<String, AvailProjectRoot>
 
 	/**
+	 * The map from [AvailArtifact] file name to its [AvailArtifactManifest].
+	 */
+	val manifestMap: MutableMap<String, AvailArtifactManifest>
+
+	/**
 	 * The project-specified [palette]][Palette], overriding any root palettes.
 	 */
 	val palette: Palette
@@ -95,6 +102,12 @@ interface AvailProject: JSONFriendly
 	 * The copyright to prepend to new Avail modules by default.
 	 */
 	var projectCopyright: String
+
+	/**
+	 * The list of [AvailArtifactBuildPlan]s used to build an [AvailArtifact]
+	 * from this [AvailProject].
+	 */
+	val artifactBuildPlans: MutableList<AvailArtifactBuildPlan>
 
 	/**
 	 * The list of [AvailProjectRoot]s in this [AvailProject].

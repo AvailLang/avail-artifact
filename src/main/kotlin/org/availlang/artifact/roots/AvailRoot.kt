@@ -92,7 +92,9 @@ import java.security.MessageDigest
  *   modules in the workbench.
  * @param stylesheet
  *   The default stylesheet for this root. Symbolic names are resolved against
- *   the accompanying [Palette].
+ *   the accompanying [palette].
+ * @param palette
+ *   The default palette for this root associated with the [stylesheet].
  * @param description
  *   An optional description of the root.
  * @param action
@@ -107,6 +109,7 @@ open class AvailRoot constructor(
 	val entryPoints: MutableList<String> = mutableListOf(),
 	val templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
 	val stylesheet: Map<String, StyleAttributes> = mapOf(),
+	val palette: Palette = Palette.empty,
 	val description: String = "",
 	var action: (AvailRoot) -> Unit = {}
 ) : Comparable<AvailRoot>
@@ -135,6 +138,7 @@ open class AvailRoot constructor(
 		manifestRoot.entryPoints,
 		manifestRoot.templates,
 		manifestRoot.stylesheet,
+		manifestRoot.palette,
 		manifestRoot.description,
 		action)
 
@@ -165,6 +169,7 @@ open class AvailRoot constructor(
 				.filter { it.value.markedForArtifactInclusion }
 				.toMutableMap(),
 			stylesheet,
+			palette,
 			description,
 			digestAlgorithm)
 

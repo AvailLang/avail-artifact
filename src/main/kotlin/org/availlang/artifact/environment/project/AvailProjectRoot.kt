@@ -2,8 +2,11 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.AvailArtifact
 import org.availlang.artifact.environment.location.AvailLocation
+import org.availlang.artifact.jar.AvailArtifactJar
 import org.availlang.artifact.manifest.AvailRootManifest
+import org.availlang.artifact.roots.AvailRoot
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
@@ -53,9 +56,27 @@ class AvailProjectRoot constructor(
 	var rootCopyright: String = "",
 	var visible: Boolean = true,
 	val palette: Palette = Palette.empty,
-	val stylesheet: Map<String, StyleAttributes> = mapOf()
+	val stylesheet: Map<String, StyleAttributes> = mutableMapOf()
 ): JSONFriendly
 {
+	/**
+	 * Specific for root imported from an [AvailArtifact] library, specifically
+	 * an [AvailArtifactJar].
+	 *
+	 * `true` indicates styles will not be overriden when loading root from the
+	 * artifact; `false` indicates they will.
+	 */
+	var lockPalette: Boolean = false
+
+	/**
+	 * Specific for root imported from an [AvailArtifact] library, specifically
+	 * an [AvailArtifactJar].
+	 *
+	 * `true` indicates the templates will be not be overriden when loading root
+	 * from the artifact; `false` indicates they will.
+	 */
+	var lockTemplates: Boolean = false
+
 	/**
 	 * The Avail module descriptor path. It takes the form:
 	 *
@@ -76,7 +97,21 @@ class AvailProjectRoot constructor(
 			templates = templates
 				.filter { it.value.markedForArtifactInclusion }
 				.toMutableMap(),
-			stylesheet = stylesheet)
+			stylesheet = stylesheet,
+			palette = palette)
+
+	/**
+	 * The [AvailRoot] sourced from this [AvailProjectRoot].
+	 */
+	@Suppress("unused")
+	val availRoot: AvailRoot get() =
+		AvailRoot(
+			name = name,
+			location = location,
+			availModuleExtensions = availModuleExtensions,
+			templates = templates,
+			stylesheet = stylesheet,
+			palette = palette)
 
 	override fun writeTo(writer: JSONWriter)
 	{
@@ -92,6 +127,7 @@ class AvailProjectRoot constructor(
 					writeStrings(availModuleExtensions)
 				}
 			}
+			at(::lockTemplates.name) { write(lockTemplates) }
 			if (templates.isNotEmpty())
 			{
 				at(::templates.name) {
@@ -102,6 +138,7 @@ class AvailProjectRoot constructor(
 					}
 				}
 			}
+			at(::lockPalette.name) { write(lockPalette) }
 			if (palette.isNotEmpty)
 			{
 				at(::palette.name) { write(palette) }
@@ -178,6 +215,14 @@ class AvailProjectRoot constructor(
 				it.associateTo(mutableMapOf()) { (rule, attributes) ->
 					rule to StyleAttributes(attributes as JSONObject)
 				}
-			} ?: mapOf())
+			} ?: mutableMapOf()
+		).apply {
+			obj.getBooleanOrNull(::lockTemplates.name)?.let {
+				lockTemplates = it
+			}
+			obj.getBooleanOrNull(::lockPalette.name)?.let {
+				lockPalette = it
+			}
+		}
 	}
 }

@@ -2,6 +2,7 @@ package org.availlang.artifact.manifest
 
 import org.availlang.artifact.AvailArtifact
 import org.availlang.artifact.AvailArtifactException
+import org.availlang.artifact.environment.project.AvailProjectRoot
 import org.availlang.artifact.environment.project.Palette
 import org.availlang.artifact.environment.project.StyleAttributes
 import org.availlang.artifact.environment.project.TemplateExpansion
@@ -27,7 +28,9 @@ import java.security.MessageDigest
  *   modules in the workbench.
  * @property stylesheet
  *   The default stylesheet for this root. Symbolic names are resolved against
- *   the accompanying [Palette].
+ *   the accompanying [palette].
+ * @property palette
+ *   The [Palette] used for the [stylesheet].
  * @property description
  *   A description of the root.
  * @property digestAlgorithm
@@ -41,6 +44,7 @@ data class AvailRootManifest constructor(
 	val entryPoints: MutableList<String> = mutableListOf(),
 	val templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
 	val stylesheet: Map<String, StyleAttributes> = mutableMapOf(),
+	val palette: Palette = Palette.empty,
 	val description: String = "",
 	val digestAlgorithm: String = "SHA-256"
 ): JSONFriendly
@@ -55,17 +59,18 @@ data class AvailRootManifest constructor(
 				writeStrings(availModuleExtensions)
 			}
 			at(::entryPoints.name) { writeStrings(entryPoints) }
-			at(::templates.name) {
-				writeObject {
-					templates.forEach { (name, expansion) ->
-						at(name) { write(expansion) }
-					}
-				}
-			}
+			at(::palette.name) { write(palette) }
 			at(::stylesheet.name) {
 				writeObject {
 					stylesheet.forEach { (name, attribute) ->
 						at(name) { write(attribute) }
+					}
+				}
+			}
+			at(::templates.name) {
+				writeObject {
+					templates.forEach { (name, expansion) ->
+						at(name) { write(expansion) }
 					}
 				}
 			}
@@ -170,6 +175,18 @@ data class AvailRootManifest constructor(
 				availModuleExtensions = extensions,
 				entryPoints = entryPoints,
 				templates = templates,
+				stylesheet = obj.getObjectOrNull(
+					AvailProjectRoot::stylesheet.name
+				)?.let {
+					it.associateTo(mutableMapOf()) { (rule, attributes) ->
+						rule to StyleAttributes(attributes as JSONObject)
+					}
+				} ?: mapOf(),
+				palette = obj.getObjectOrNull(
+					AvailProjectRoot::palette.name
+				)?.let {
+					Palette.from(it)
+				} ?: Palette.empty,
 				description = description,
 				digestAlgorithm = digestAlgorithm)
 		}

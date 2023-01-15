@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "org.availlang"
-version = "2.0.0.alpha18"
+version = "2.0.0.alpha19"
 
 repositories {
     mavenLocal()
@@ -35,7 +35,7 @@ kotlin {
 }
 
 dependencies {
-    api("org.availlang:avail-json:2.0.0")
+    api("org.availlang:avail-json:2.1.0")
     testImplementation(kotlin("test"))
 }
 

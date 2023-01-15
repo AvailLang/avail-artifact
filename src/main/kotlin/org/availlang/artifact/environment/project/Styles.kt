@@ -52,8 +52,8 @@ import java.awt.Color
  * @author Todd L Smith &lt;todd@availlang.org&gt;
  */
 class Palette constructor(
-	val lightColors: Map<String, Color>,
-	val darkColors: Map<String, Color>
+	val lightColors: Map<String, Color> = mutableMapOf(),
+	val darkColors: Map<String, Color> = mutableMapOf()
 ): JSONFriendly
 {
 	init
@@ -115,7 +115,7 @@ class Palette constructor(
 	companion object
 	{
 		/** The canonical empty [Palette]. */
-		val empty = Palette(mapOf(), mapOf())
+		val empty get() = Palette()
 
 		/**
 		 * Deserialize a [Palette] from the specified [JSONObject].

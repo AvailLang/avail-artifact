@@ -48,6 +48,7 @@ class CreateAvailRoot constructor(
 	entryPoints: MutableList<String> = mutableListOf(),
 	templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
 	stylesheet: Map<String, StyleAttributes> = mapOf(),
+	palette: Palette = Palette.empty,
 	description: String = "",
 	action: (AvailRoot) -> Unit = {}
 ) : AvailRoot(
@@ -58,6 +59,7 @@ class CreateAvailRoot constructor(
 	entryPoints,
 	templates,
 	stylesheet,
+	palette,
 	description,
 	action)
 {
@@ -85,6 +87,7 @@ class CreateAvailRoot constructor(
 		manifestRoot.entryPoints,
 		manifestRoot.templates,
 		manifestRoot.stylesheet,
+		manifestRoot.palette,
 		manifestRoot.description,
 		action)
 
