@@ -144,7 +144,8 @@ class AvailArtifactBuildPlan private constructor(
 				File(parent).mkdirs()
 				delete()
 			}
-			val roots = mutableListOf<AvailRoot>()
+
+			val roots = project.roots.values.map { it.availRoot }
 			val manifestMap = mutableMapOf<String, AvailRootManifest>()
 			rootNames.forEach {
 				val r = project.roots[it] ?: return@forEach
