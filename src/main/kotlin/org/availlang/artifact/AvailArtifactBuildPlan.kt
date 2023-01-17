@@ -187,6 +187,8 @@ class AvailArtifactBuildPlan private constructor(
 		}
 	}
 
+	override fun toString(): String = implementationTitle
+
 	/**
 	 * Construct a [AvailArtifactBuildPlan] from the provided [JSONObject].
 	 *
@@ -265,4 +267,5 @@ class AvailArtifactBuildPlan private constructor(
 			}
 		}
 	}
+
 }
