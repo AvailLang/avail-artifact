@@ -3,12 +3,10 @@ package org.availlang.artifact.manifest
 import org.availlang.artifact.*
 import org.availlang.artifact.AvailArtifact.Companion.artifactRootDirectory
 import org.availlang.artifact.environment.project.AvailProjectRoot
-import org.availlang.artifact.environment.project.StyleAttributes
 import org.availlang.artifact.jar.JvmComponent
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.jsonPrettyPrintWriter
-import java.awt.Color
 import java.io.File
 import java.nio.charset.StandardCharsets
 
@@ -91,24 +89,12 @@ sealed interface AvailArtifactManifest: JSONFriendly
 	fun updateRoot (root: AvailProjectRoot)
 	{
 		val u = roots[root.name] ?: return
-		if (!root.lockPalette)
-		{
-			(root.stylesheet as MutableMap<String, StyleAttributes>).apply {
-				clear()
-				putAll(u.stylesheet)
-			}
-			(root.palette.lightColors as MutableMap<String, Color>).apply {
-				clear()
-				putAll(u.palette.lightColors)
-			}
-			(root.palette.darkColors as MutableMap<String, Color>).apply {
-				clear()
-				putAll(u.palette.darkColors)
-			}
-		}
+		root.styles.updateFrom(u.styles)
 		if (!root.lockTemplates)
 		{
-			root.templates.putAll(u.templates)
+			val merged = root.templateGroup.mergeOnto(u.templates)
+			root.templateGroup.templates.clear()
+			root.templateGroup.templates.putAll(merged.templates)
 		}
 	}
 

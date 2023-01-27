@@ -1,9 +1,8 @@
 package org.availlang.artifact.roots
 
 import org.availlang.artifact.environment.location.AvailLocation
-import org.availlang.artifact.environment.project.Palette
-import org.availlang.artifact.environment.project.StyleAttributes
-import org.availlang.artifact.environment.project.TemplateExpansion
+import org.availlang.artifact.environment.project.StylingGroup
+import org.availlang.artifact.environment.project.TemplateGroup
 import org.availlang.artifact.manifest.AvailRootManifest
 import java.security.MessageDigest
 
@@ -31,9 +30,8 @@ import java.security.MessageDigest
  * @param templates
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
- * @param stylesheet
- *   The default stylesheet for this root. Symbolic names are resolved against
- *   the accompanying [Palette].
+ * @param styles
+ *   The [StylingGroup] for this [AvailRoot].
  * @param description
  *   An optional description of the root.
  * @param action
@@ -46,9 +44,8 @@ class CreateAvailRoot constructor(
 	digestAlgorithm: String = "SHA-256",
 	availModuleExtensions: MutableList<String> = mutableListOf("avail"),
 	entryPoints: MutableList<String> = mutableListOf(),
-	templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
-	stylesheet: Map<String, StyleAttributes> = mapOf(),
-	palette: Palette = Palette.empty,
+	templates: TemplateGroup = TemplateGroup(),
+	styles: StylingGroup = StylingGroup(),
 	description: String = "",
 	action: (AvailRoot) -> Unit = {}
 ) : AvailRoot(
@@ -58,8 +55,7 @@ class CreateAvailRoot constructor(
 	availModuleExtensions,
 	entryPoints,
 	templates,
-	stylesheet,
-	palette,
+	styles,
 	description,
 	action)
 {
@@ -86,8 +82,7 @@ class CreateAvailRoot constructor(
 		manifestRoot.availModuleExtensions,
 		manifestRoot.entryPoints,
 		manifestRoot.templates,
-		manifestRoot.stylesheet,
-		manifestRoot.palette,
+		manifestRoot.styles,
 		manifestRoot.description,
 		action)
 

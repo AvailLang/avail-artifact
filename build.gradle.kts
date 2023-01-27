@@ -35,7 +35,7 @@ kotlin {
 }
 
 dependencies {
-    api("org.availlang:avail-json:2.1.0")
+    api("org.availlang:avail-json:2.1.1")
     testImplementation(kotlin("test"))
 }
 

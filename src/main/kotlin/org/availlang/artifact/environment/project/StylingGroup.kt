@@ -1,5 +1,5 @@
 /*
- * Styles.kt
+ * StylingGroup.kt
  * Copyright © 1993-2022, The Avail Foundation, LLC.
  * All rights reserved.
  *
@@ -34,10 +34,13 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.environment.location.ProjectConfig
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
+import org.availlang.json.jsonObject
 import java.awt.Color
+import java.io.File
 
 /**
  * The palette of symbolic styles. Both registries contain the same keys, which
@@ -73,6 +76,7 @@ class Palette constructor(
 	 * Whether the receiver is not empty, i.e., binds at least one symbolic name
 	 * to [colors][Color].
 	 */
+	@Suppress("unused")
 	inline val isNotEmpty get() = !isEmpty
 
 	override fun writeTo(writer: JSONWriter) = writer.writeObject {
@@ -82,6 +86,16 @@ class Palette constructor(
 			at(it) { write(hex(it)) }
 		}
 	}
+
+	/**
+	 * Create a new [Palette] by merging this [Palette] onto the provided
+	 * [Palette] overriding the provided [Palette]'s colors with this
+	 * [Palette]'s colors if duplicates exist.
+	 */
+	fun mergeOnto (palette: Palette): Palette =
+		Palette(
+			palette.lightColors + lightColors,
+			palette.darkColors + darkColors)
 
 	/**
 	 * Construct a padded hexadecimal rendition of the light/dark color scheme,
@@ -248,5 +262,178 @@ data class StyleAttributes constructor(
 				at(::strikethrough.name) { write(strikethrough) }
 			}
 		}
+	}
+}
+
+/**
+ * A pairing of a stylesheet and its associated [Palette].
+ *
+ * @author Richard Arriaga
+ */
+class StylingSelection constructor(
+	var palette: Palette = Palette.empty,
+	val stylesheet: MutableMap<String, StyleAttributes> = mutableMapOf())
+{
+	/**
+	 * Apply this [StylingSelection] onto the provided [StylingSelection].
+	 *
+	 * @param selection
+	 *   The [StylingSelection] to merge onto.
+	 * @return
+	 *   The merged [StylingSelection].
+	 */
+	fun mergeOnto (selection: StylingSelection): StylingSelection =
+		selection.apply {
+			palette = this@StylingSelection.palette.mergeOnto(palette)
+			stylesheet.putAll(this@StylingSelection.stylesheet)
+		}
+
+	companion object
+	{
+		/**
+		 * A new empty [StylingSelection] with each call.
+		 */
+		val empty get() = StylingSelection(Palette.empty, mutableMapOf())
+
+		/**
+		 * Compose together the ordered list of [StylingSelection]s,
+		 * [merging][mergeOnto] from left to write with the last element in the
+		 * list having the final override capability.
+		 *
+		 * @param orderedStyles
+		 *   The list of [StylingSelection]s to compose together.
+		 * @return
+		 *   The resulting composed [StylingSelection].
+		 */
+		@Suppress("unused")
+		fun compose (orderedStyles: List<StylingSelection>): StylingSelection =
+			orderedStyles.fold(empty) { merged, next -> next.mergeOnto(merged) }
+	}
+}
+
+/**
+ * The stylesheet and accompanying [Palette] options.
+ *
+ * @author Richard Arriaga
+ */
+class StylingGroup constructor(): JSONFriendly
+{
+	/**
+	 * The default stylesheet for this root. Symbolic names are resolved against
+	 * the accompanying [Palette]s.
+	 */
+	val stylesheet: Map<String, StyleAttributes> = mutableMapOf()
+
+	/**
+	 * The map from the palette name to a [Palette] for the accompanying
+	 * [stylesheet].
+	 */
+	val palettes = mutableMapOf<String, Palette>()
+
+	/**
+	 * Update this [StylingGroup] using the provided [StylingGroup]. The
+	 * provided [StylingGroup] will overwrite duplicates in this [StylingGroup].
+	 *
+	 * @param other
+	 *   The [StylingGroup] to update from.
+	 */
+	fun updateFrom (other: StylingGroup)
+	{
+		(stylesheet as MutableMap<String, StyleAttributes>)
+			.putAll(other.stylesheet)
+		palettes.putAll(other.palettes)
+	}
+
+	/**
+	 * Answer the [StylingSelection] for the given [Palette] name.
+	 *
+	 * @param paletteName
+	 *   The name of the [Palette] to choose from [palettes] to use as the
+	 *   [StylingSelection.palette].
+	 * @return
+	 *   The composed [StylingSelection].
+	 */
+	@Suppress("unused")
+	fun selection (paletteName: String): StylingSelection =
+		StylingSelection(
+			palettes[paletteName] ?: palettes.values.first().let {
+				Palette(
+					it.lightColors.toMutableMap(),
+					it.darkColors.toMutableMap())
+			},
+			stylesheet.toMutableMap())
+
+	override fun writeTo(writer: JSONWriter)
+	{
+		writer.writeObject {
+			at(::stylesheet.name) {
+				writeObject {
+					stylesheet.forEach { (rule, attributes) ->
+						at(rule) { write(attributes) }
+					}
+				}
+			}
+			at(::palettes.name)
+			{
+				writeObject {
+					palettes.forEach { (name, palette) ->
+						at(name) { write(palette) }
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Save this [StylingGroup] to the file indicated by the provided path.
+	 *
+	 * @param path
+	 *   The path to the file where this [StylingGroup] is to be saved.
+	 */
+	@Suppress("unused")
+	fun saveToDisk (path: String)
+	{
+		File(path).apply {
+			if (!isDirectory)
+			{
+				writeText(jsonPrettyPrintedFormattedString)
+			}
+		}
+	}
+
+	/**
+	 * Construct a [StylingGroup].
+	 *
+	 * @param obj
+	 *   The [JSONObject] to extract the [StylingGroup] from.
+	 */
+	constructor(obj: JSONObject): this()
+	{
+		obj.getObjectOrNull(::stylesheet.name)?.let {
+			it.associateTo(stylesheet as MutableMap<String, StyleAttributes>)
+			{ (rule, attributes) ->
+				rule to StyleAttributes(attributes as JSONObject)
+			}
+		}
+		obj.getObjectOrNull(::palettes.name)?.let {
+			it.associateTo(palettes)
+			{ (name, palette) ->
+				name to Palette.from(palette as JSONObject)
+			}
+		}
+	}
+
+	companion object
+	{
+		/**
+		 * Extract the [StylingGroup] from the configuration file at the provided
+		 * [ProjectConfig] location.
+		 *
+		 * @param config
+		 *   The [ProjectConfig] location of the file that contains the
+		 *   [StylingGroup].
+		 */
+		fun from (config: ProjectConfig): StylingGroup =
+			StylingGroup(jsonObject(File(config.fullPathNoPrefix).readText()))
 	}
 }

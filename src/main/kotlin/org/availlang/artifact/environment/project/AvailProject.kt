@@ -35,11 +35,15 @@ package org.availlang.artifact.environment.project
 import org.availlang.artifact.AvailArtifact
 import org.availlang.artifact.AvailArtifactBuildPlan
 import org.availlang.artifact.AvailArtifactException
+import org.availlang.artifact.environment.AvailEnvironment
+import org.availlang.artifact.environment.AvailEnvironment.projectConfigDirectory
 import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
+import org.availlang.json.jsonObject
 import org.availlang.json.jsonPrettyPrintWriter
+import java.io.File
 
 /**
  * Describes the makeup of an Avail project.
@@ -91,17 +95,72 @@ interface AvailProject: JSONFriendly
 	val manifestMap: MutableMap<String, AvailArtifactManifest>
 
 	/**
-	 * The project-specified [palette]][Palette], overriding any root palettes.
+	 *  The [LocalSettings] for this [AvailProject].
 	 */
-	val palette: Palette
-
-	/** The project-specific stylesheet, overriding any root stylesheets. */
-	val stylesheet: Map<String, StyleAttributes>
+	var localSettings: LocalSettings
 
 	/**
-	 * The copyright to prepend to new Avail modules by default.
+	 * The [StylingGroup] for this [AvailProject].
 	 */
-	var projectCopyright: String
+	var styles: StylingGroup
+
+	/**
+	 * The [TemplateGroup] for this [AvailProject].
+	 */
+	var templateGroup: TemplateGroup
+
+	/**
+	 * The [StylingSelection] used for styling this [AvailProject].
+	 */
+	@Suppress("unused")
+	val stylingSelection: StylingSelection get() =
+		localSettings.palette.let { p ->
+			val projSelection = StylingSelection(
+				when
+				{
+					styles.palettes.isEmpty() -> Palette.empty
+					p.isNotEmpty() ->
+						(styles.palettes[p] ?: styles.palettes.values.first())
+							.let { Palette(it.lightColors, it.darkColors) }
+					p.isEmpty() ->
+						styles.palettes.values.first()
+							.let { Palette(it.lightColors, it.darkColors) }
+					else ->
+					{
+						Palette.empty
+					}
+				},
+				styles.stylesheet.toMutableMap())
+			val merged = roots.values.toMutableList()
+				.apply { sortedBy { it.name } }
+				.fold(StylingSelection())
+				{ merged, r ->
+					r.stylingSelection.mergeOnto(merged)
+				}
+			projSelection.mergeOnto(merged)
+		}
+
+	/**
+	 * The map of [Palette] names to [Palette]s available for this root.
+	 */
+	@Suppress("unused")
+	val palettes get() = styles.palettes
+
+	/** The project-specific stylesheet, overriding any root stylesheets. */
+	@Suppress("unused")
+	val stylesheet: Map<String, StyleAttributes> get() = styles.stylesheet
+
+	/**
+	 * The set of Strings that describes arbitrary things to disallow in an
+	 * Avail project.
+	 */
+	val disallow: MutableSet<String>
+
+	/**
+	 * The list of [ModuleHeaderFileMetadata]s that can be used to prepend to
+	 * the start of new modules.
+	 */
+	val moduleHeaders: MutableList<ModuleHeaderFileMetadata>
 
 	/**
 	 * The list of [AvailArtifactBuildPlan]s used to build an [AvailArtifact]
@@ -114,6 +173,20 @@ interface AvailProject: JSONFriendly
 	 */
 	val availProjectRoots: List<AvailProjectRoot> get() =
 		roots.values.toList().sortedBy { it.name }
+
+	/**
+	 * Optionally create the files expected in the [AvailProjectRoot]'s
+	 * [configuration directory][AvailEnvironment.projectRootConfigPath].
+	 *
+	 * @param configPath
+	 *   The [configuration directory][AvailEnvironment.projectRootConfigPath]
+	 *   for the target [AvailProjectRoot].
+	 * @return
+	 *   The root configuration directory [File].
+	 */
+	fun optionallyInitializeConfigDirectory (
+		configPath: String
+	): File
 
 	/**
 	 * Add the [AvailProjectRoot] to this [AvailProject].
@@ -148,6 +221,59 @@ interface AvailProject: JSONFriendly
 			this@AvailProject.writeTo(this)
 		}.toString()
 
+	/**
+	 * Write the [templateGroup] to its configuration file in the project config
+	 * directory.
+	 *
+	 * @param projectConfigDir
+	 *   The project configuration directory.
+	 */
+	@Suppress("unused")
+	fun saveTemplatesToDisk (projectConfigDir: String)
+	{
+		templateGroup.saveToDisk(projectConfigDir)
+	}
+
+	/**
+	 * Write the [styles] to its configuration file in the project config
+	 * directory.
+	 *
+	 * @param projectConfigDir
+	 *   The project configuration directory.
+	 */
+	@Suppress("unused")
+	fun saveStylesToDisk (projectConfigDir: String)
+	{
+		styles.saveToDisk(projectConfigDir)
+	}
+
+	/**
+	 * Write the [localSettings] to its configuration file in the project config
+	 * directory.
+	 */
+	@Suppress("unused")
+	fun saveLocalSettingsToDisk ()
+	{
+		localSettings.save()
+	}
+
+	/**
+	 * Write the [templateGroup] to its configuration file in the project config
+	 * directory.
+	 *
+	 * @param projectConfigDir
+	 *   The project configuration directory.
+	 */
+	@Suppress("unused")
+	fun saveArtifactBuildPlansToDisk (projectConfigDir: String)
+	{
+		jsonPrettyPrintWriter {
+			writeArray {
+				artifactBuildPlans.forEach { write(it) }
+			}
+		}
+	}
+
 	companion object
 	{
 		/**
@@ -159,6 +285,7 @@ interface AvailProject: JSONFriendly
 		/**
 		 * The Avail configuration file name.
 		 */
+		@Suppress("unused")
 		const val CONFIG_FILE_NAME = "avail-config.json"
 
 		/**
@@ -171,6 +298,8 @@ interface AvailProject: JSONFriendly
 		/**
 		 * Extract and build a [AvailProject] from the provided [JSONObject].
 		 *
+		 * @param projectFileName
+		 *   The name of the project file without the path.
 		 * @param projectDirectory
 		 *   The root directory of the project.
 		 * @param obj
@@ -179,6 +308,7 @@ interface AvailProject: JSONFriendly
 		 *   The extracted `AvailProject`.
 		 */
 		fun from (
+			projectFileName: String,
 			projectDirectory: String,
 			obj: JSONObject
 		): AvailProject
@@ -188,7 +318,7 @@ interface AvailProject: JSONFriendly
 
 			return when (version)
 			{
-				1 -> AvailProjectV1.from(projectDirectory, obj)
+				1 -> AvailProjectV1.from(projectFileName, projectDirectory, obj)
 				else ->
 					throw AvailArtifactException("Invalid Avail Project: " +
 						"Version $version is not in the valid range of " +
@@ -196,5 +326,73 @@ interface AvailProject: JSONFriendly
 						" [1, $CURRENT_PROJECT_VERSION].")
 			}
 		}
+
+		/**
+		 * Extract and build a [AvailProject] from the provided [JSONObject].
+		 * Initializes the project configuration directories if not already
+		 * created.
+		 *
+		 * @param projectFilePath
+		 *   The path to the project file.
+		 * @return
+		 *   The extracted `AvailProject`.
+		 */
+		fun from (projectFilePath: String): AvailProject
+		{
+			val file = File(projectFilePath)
+			val directory = file.parent
+			val projectConfigDirectory = File(directory, projectConfigDirectory)
+			if(!projectConfigDirectory.exists())
+			{
+				projectConfigDirectory.mkdirs()
+				File(projectConfigDirectory, ".gitignore").writeText(
+					"/**/*local-state*\n/**/*.backup")
+			}
+			return from(
+				file.name,
+				directory,
+				jsonObject(file.readText(Charsets.UTF_8)))
+		}
+
+		/**
+		 * Optionally create the files expected in the configuration directory.
+		 *
+		 * @param configPath
+		 *   The path to the configuration directory.
+		 * @return
+		 *   The configuration directory [File].
+		 */
+		fun optionallyInitializeConfigDirectory(
+			configPath: String
+		): File =
+			File(configPath).apply {
+				if (!exists()) mkdirs()
+				File(this, AvailProjectRoot.TEMPLATE_FILE_NAME).let {
+					if (!it.exists())
+					{
+						it.writeText(TemplateGroup().jsonFormattedString)
+					}
+				}
+				File(this, AvailProjectRoot.STYLE_FILE_NAME).let {
+					if (!it.exists())
+					{
+						it.writeText(StylingGroup().jsonPrettyPrintedFormattedString)
+					}
+				}
+				File(this, LocalSettings.LOCAL_SETTINGS_FILE).let {
+					if (!it.exists())
+					{
+						it.writeText(LocalSettings(it.absolutePath)
+							.jsonPrettyPrintedFormattedString)
+					}
+				}
+
+				File(this, AvailArtifactBuildPlan.ARTIFACT_PLANS_FILE).let {
+					if (!it.exists())
+					{
+						it.writeText("[]")
+					}
+				}
+			}
 	}
 }

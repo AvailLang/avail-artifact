@@ -32,9 +32,12 @@
 
 package org.availlang.artifact.environment.project
 
+import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.environment.location.InvalidLocation
-import java.io.BufferedWriter
+import java.io.CharArrayWriter
 import java.io.PrintWriter
+import java.io.StringWriter
+import java.io.Writer
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -70,12 +73,40 @@ sealed class ProjectProblem
 	val created = System.currentTimeMillis()
 
 	/**
-	 * Write this problem to the provdied [BufferedWriter].
+	 * Write this problem to the provided [Writer].
 	 *
 	 * @param writer
-	 *   The [BufferedWriter] to write to.
+	 *   The [Writer] to write to.
 	 */
-	abstract fun writeTo (writer: BufferedWriter)
+	open fun writeTo (writer: Writer)
+	{
+		val border = "-----------------"
+		writer.write("$border $type (${localTimestamp(created)}) $border\n\n")
+		writer.write("Message: $description\n")
+		writer.write("\n")
+		exception?.let {
+			writer.write("\n------- Stack Trace -------\n")
+			writer.write(exceptionStack)
+			writer.write("\n")
+		}
+	}
+
+	override fun toString(): String =
+		StringWriter().apply {
+			writeTo(this)
+		}.toString()
+
+	/**
+	 * The String [Throwable.printStackTrace] if [exception] is not `null`.
+	 * Empty String otherwise.
+	 */
+	val exceptionStack get() =
+		exception?.let { e ->
+			CharArrayWriter().let {
+				e.printStackTrace(PrintWriter(it))
+				it.toString()
+			}
+		} ?: ""
 }
 
 /**
@@ -94,6 +125,7 @@ sealed class ProjectProblem
  *   The description of the problem. Defaults to the `exception`'s message if
  *   present.
  */
+@Suppress("unused")
 class UnexplainedProblem constructor (
 	exception: Throwable,
 	override val description: String = exception.message ?: "No error message."
@@ -106,13 +138,13 @@ class UnexplainedProblem constructor (
 		this.exception = exception
 	}
 
-	override fun writeTo(writer: BufferedWriter)
+	override fun writeTo(writer: Writer)
 	{
 		val border = "----------------"
 		writer.write("$border $type (${localTimestamp(created)}) $border\n\n")
 		writer.write("Message: $description\n")
 		writer.write("\n------- Stack Trace -------\n")
-		exception!!.printStackTrace(PrintWriter(writer))
+		writer.write(exceptionStack)
 		writer.write("\n")
 	}
 }
@@ -125,6 +157,7 @@ class UnexplainedProblem constructor (
  * @property invalidLocation
  *   The [InvalidLocation] that is the cause of this [ProjectProblem].
  */
+@Suppress("unused")
 class LocationProblem constructor(
 	val invalidLocation: InvalidLocation
 ): ProjectProblem()
@@ -134,7 +167,7 @@ class LocationProblem constructor(
 	override val description: String
 		get() = invalidLocation.problem
 
-	override fun writeTo(writer: BufferedWriter)
+	override fun writeTo(writer: Writer)
 	{
 		val border = "------------------"
 		writer.write("$border $type (${localTimestamp(created)}) $border\n\n")
@@ -148,12 +181,13 @@ class LocationProblem constructor(
  *
  * @author Richard Arriaga
  */
+@Suppress("unused")
 class ModuleRootScanProblem constructor(
 	override val description: String
 ): ProjectProblem()
 {
 	override val type: String = "Module Root Scan Problem"
-	override fun writeTo(writer: BufferedWriter)
+	override fun writeTo(writer: Writer)
 	{
 		val border = "----------------"
 		writer.write("$border $type (${localTimestamp(created)}) $border\n\n")
@@ -168,12 +202,18 @@ class ModuleRootScanProblem constructor(
  * @author Richard Arriaga
  */
 class ConfigFileProblem constructor(
-	override val description: String
+	override val description: String,
+	exception: Throwable? = null
 ): ProjectProblem()
 {
 	override val type: String = "Config File Problem"
 
-	override fun writeTo(writer: BufferedWriter)
+	init
+	{
+		this.exception = exception
+	}
+
+	override fun writeTo(writer: Writer)
 	{
 		val border = "-----------------"
 		writer.write("$border $type (${localTimestamp(created)}) $border\n\n")
@@ -246,5 +286,6 @@ fun localTimestamp (millisUnixEpoch: Long): String =
  * @return
  *   The formatted date-time.
  */
+@Suppress("unused")
 fun compactLocalTimestamp (millisUnixEpoch: Long): String =
 	formattedLocalTimestamp(millisUnixEpoch, "yyyyMMddHHmmss")

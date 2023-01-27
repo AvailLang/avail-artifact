@@ -32,12 +32,14 @@
 
 package org.availlang.artifact.roots
 
+import org.availlang.artifact.environment.AvailEnvironment
 import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.environment.project.AvailProject
 import org.availlang.artifact.environment.project.AvailProjectRoot
+import org.availlang.artifact.environment.project.LocalSettings
 import org.availlang.artifact.environment.project.Palette
-import org.availlang.artifact.environment.project.StyleAttributes
-import org.availlang.artifact.environment.project.TemplateExpansion
+import org.availlang.artifact.environment.project.TemplateGroup
+import org.availlang.artifact.environment.project.StylingGroup
 import org.availlang.artifact.manifest.AvailRootManifest
 import java.security.MessageDigest
 
@@ -59,10 +61,10 @@ import java.security.MessageDigest
  *   modules.
  * @property entryPoints
  *   The Avail entry points exposed by this root.
- * @property templates
+ * @property templateGroup
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
- * @property stylesheet
+ * @property styles
  *   The default stylesheet for this root. Symbolic names are resolved against
  *   the accompanying [Palette].
  * @property description
@@ -87,14 +89,11 @@ import java.security.MessageDigest
  *   modules.
  * @param entryPoints
  *   The Avail entry points exposed by this root.
- * @param templates
+ * @param templateGroup
  *   The templates that should be available when editing Avail source
  *   modules in the workbench.
- * @param stylesheet
- *   The default stylesheet for this root. Symbolic names are resolved against
- *   the accompanying [palette].
- * @param palette
- *   The default palette for this root associated with the [stylesheet].
+ * @param styles
+ *   The [StylingGroup] for this [AvailRoot].
  * @param description
  *   An optional description of the root.
  * @param action
@@ -107,9 +106,8 @@ open class AvailRoot constructor(
 	val digestAlgorithm: String = "SHA-256",
 	val availModuleExtensions: MutableList<String> = mutableListOf("avail"),
 	val entryPoints: MutableList<String> = mutableListOf(),
-	val templates: MutableMap<String, TemplateExpansion> = mutableMapOf(),
-	val stylesheet: Map<String, StyleAttributes> = mapOf(),
-	val palette: Palette = Palette.empty,
+	val templateGroup: TemplateGroup = TemplateGroup(),
+	val styles: StylingGroup = StylingGroup(),
 	val description: String = "",
 	var action: (AvailRoot) -> Unit = {}
 ) : Comparable<AvailRoot>
@@ -137,8 +135,7 @@ open class AvailRoot constructor(
 		manifestRoot.availModuleExtensions,
 		manifestRoot.entryPoints,
 		manifestRoot.templates,
-		manifestRoot.stylesheet,
-		manifestRoot.palette,
+		manifestRoot.styles,
 		manifestRoot.description,
 		action)
 
@@ -165,30 +162,42 @@ open class AvailRoot constructor(
 			name,
 			availModuleExtensions,
 			entryPoints,
-			templates
-				.filter { it.value.markedForArtifactInclusion }
-				.toMutableMap(),
-			stylesheet,
-			palette,
+			templateGroup.markedForInclusion,
+			styles,
 			description,
 			digestAlgorithm)
 
 	/**
 	 * Create a new [AvailProjectRoot] from this [AvailRoot].
 	 *
+	 * @param projectFileName
+	 *   The name of the [AvailProject] configuration file.
 	 * @param projectDirectory
 	 *   The root directory of the [AvailProject].
 	 * @return
 	 *   A new [AvailProjectRoot].
 	 */
 	@Suppress("unused")
-	fun createProjectRoot(projectDirectory: String): AvailProjectRoot =
+	fun createProjectRoot(
+		projectFileName: String,
+		projectDirectory: String
+	): AvailProjectRoot =
 		AvailProjectRoot(
+			AvailEnvironment.projectRootConfigPath(
+				projectFileName,
+				name,
+				projectDirectory),
 			projectDirectory,
 			name,
 			location,
-			availModuleExtensions,
-			templates)
+			LocalSettings(
+				AvailEnvironment.projectRootConfigPath(
+					projectFileName,
+					name,
+					projectDirectory)),
+			styles,
+			templateGroup,
+			availModuleExtensions)
 
 	// Module packages always come before modules.
 	override fun compareTo(other: AvailRoot): Int =

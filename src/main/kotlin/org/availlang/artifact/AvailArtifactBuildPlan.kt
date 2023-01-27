@@ -1,5 +1,6 @@
 package org.availlang.artifact
 
+import org.availlang.artifact.environment.AvailEnvironment
 import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.environment.project.AvailProject
 import org.availlang.artifact.jar.AvailArtifactJar
@@ -13,7 +14,9 @@ import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
 import org.availlang.json.JSONWriter
 import org.availlang.json.json
+import org.availlang.json.jsonArray
 import java.io.File
+import java.security.MessageDigest
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 
@@ -38,6 +41,10 @@ import java.util.zip.ZipFile
  *   The title of the artifact being created. **REQUIRED**
  * @property artifactDescription
  *   The description of the [AvailArtifact] used in the [AvailArtifactManifest].
+ * @property digestAlgorithm
+ *   The [MessageDigest] algorithm to use to create the digests for all the
+ *   root's contents. This must be a valid algorithm accessible from
+ *   [java.security.MessageDigest.getInstance].
  * @property rootNames
  *   The list of [AvailRoot.name]s to add to the artifact. **REQUIRED**
  * @property includedFiles
@@ -62,6 +69,7 @@ class AvailArtifactBuildPlan private constructor(
 	var implementationTitle: String = "",
 	var jarMainClass: String = "",
 	var artifactDescription: String = "",
+	var digestAlgorithm: String = "SHA=256",
 	var rootNames: MutableList<String> = mutableListOf(),
 	var includedFiles: MutableList<Pair<AvailLocation, String>> = mutableListOf(),
 	var jarFileLocations: MutableList<AvailLocation> = mutableListOf(),
@@ -82,6 +90,7 @@ class AvailArtifactBuildPlan private constructor(
 			at(::implementationTitle.name) { write(implementationTitle) }
 			at(::jarMainClass.name) { write(jarMainClass) }
 			at(::artifactDescription.name) { write(artifactDescription) }
+			at(::digestAlgorithm.name) { write(digestAlgorithm) }
 			at(::rootNames.name) { writeStrings(rootNames) }
 			at(::includedFiles.name) {
 				writePairsAsArrayOfPairs(includedFiles.iterator()) { f, s ->
@@ -115,12 +124,15 @@ class AvailArtifactBuildPlan private constructor(
 		success: (String) -> Unit,
 		failure: (String, Throwable?) -> Unit)
 	{
-		val out = outputLocation
+		val out = outputLocation ?: return Unit.apply {
+			failure("No artifact output location defined", null)
+		}
 		val errorString = buildString {
 			if (version.isBlank())
 			{
 				append("\n\tMissing version")
 			}
+			@Suppress("SENSELESS_COMPARISON")
 			if (out == null)
 			{
 				append("\n\tMissing outputLocation")
@@ -137,7 +149,6 @@ class AvailArtifactBuildPlan private constructor(
 				null)
 			return
 		}
-		println("Creating ${out!!.fullPathNoPrefix}…")
 		try
 		{
 			File(out.fullPathNoPrefix).apply {
@@ -149,7 +160,7 @@ class AvailArtifactBuildPlan private constructor(
 			val manifestMap = mutableMapOf<String, AvailRootManifest>()
 			rootNames.forEach {
 				val r = project.roots[it] ?: return@forEach
-				manifestMap[r.name] = r.manifest
+				manifestMap[r.name] = r.manifest(digestAlgorithm)
 			}
 			val jarBuilder = AvailArtifactJarBuilder(
 				out.fullPathNoPrefix,
@@ -162,10 +173,7 @@ class AvailArtifactBuildPlan private constructor(
 					jvmComponent),
 				jarMainClass,
 				customManifestItems)
-			roots.forEach {
-				println("Adding Root\n\t$it")
-				jarBuilder.addRoot(it)
-			}
+			roots.forEach { jarBuilder.addRoot(it) }
 			includedFiles.forEach {
 				jarBuilder.addFile(File(it.first.fullPathNoPrefix), it.second)
 			}
@@ -233,6 +241,8 @@ class AvailArtifactBuildPlan private constructor(
 		jarMainClass = obj.getStringOrNull(::jarMainClass.name) ?: ""
 		artifactDescription =
 			obj.getStringOrNull(::artifactDescription.name) ?: ""
+		digestAlgorithm =
+			obj.getStringOrNull(::digestAlgorithm.name) ?: ""
 		obj.getArrayOrNull(::rootNames.name)?.strings?.apply {
 			rootNames.addAll(this)
 		}
@@ -268,4 +278,34 @@ class AvailArtifactBuildPlan private constructor(
 		}
 	}
 
+	companion object
+	{
+		/**
+		 * The name of the file that contains the [AvailArtifactBuildPlan]s.
+		 */
+		@Suppress("MemberVisibilityCanBePrivate")
+		const val ARTIFACT_PLANS_FILE = "artifact-plans.json"
+
+		/**
+		 * Read the [AvailArtifactBuildPlan]s from disk.
+		 *
+		 * @param projectFileName
+		 *   The name of the project.
+		 * @param projectPath
+		 *   The absolute path to the [AvailProject] directory.
+		 * @return
+		 *   The list of [AvailArtifactBuildPlan]s.
+		 */
+		fun readPlans (
+			projectFileName: String,
+			projectPath: String
+		): MutableList<AvailArtifactBuildPlan> =
+			jsonArray(File(
+				"${AvailEnvironment.projectConfigPath(
+					projectFileName, projectPath)}/$ARTIFACT_PLANS_FILE"
+			).readText()) {}.map {
+				AvailArtifactBuildPlan(
+					projectPath, it as JSONObject)
+			}.toMutableList()
+	}
 }
