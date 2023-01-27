@@ -127,7 +127,8 @@ class AvailProjectV1 constructor(
 			val dirName = projectFileName.removeSuffix(".json")
 			val projectConfigDir = AvailEnvironment.projectConfigPath(
 				dirName, projectDirectory)
-			AvailProject.optionallyInitializeConfigDirectory(projectConfigDir)
+			AvailProject.optionallyInitializeConfigDirectory(
+				projectConfigDir, false)
 			val id = obj.getString(AvailProjectV1::id.name)
 			val name = obj.getString(AvailProjectV1::name.name)
 			val darkMode = obj.getBooleanOrNull(AvailProjectV1::darkMode.name)

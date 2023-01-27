@@ -363,7 +363,8 @@ interface AvailProject: JSONFriendly
 		 *   The configuration directory [File].
 		 */
 		fun optionallyInitializeConfigDirectory(
-			configPath: String
+			configPath: String,
+			forRoot: Boolean = true
 		): File =
 			File(configPath).apply {
 				if (!exists()) mkdirs()
@@ -387,10 +388,13 @@ interface AvailProject: JSONFriendly
 					}
 				}
 
-				File(this, AvailArtifactBuildPlan.ARTIFACT_PLANS_FILE).let {
-					if (!it.exists())
-					{
-						it.writeText("[]")
+				if (!forRoot)
+				{
+					File(this, AvailArtifactBuildPlan.ARTIFACT_PLANS_FILE).let {
+						if (!it.exists())
+						{
+							it.writeText("[]")
+						}
 					}
 				}
 			}
