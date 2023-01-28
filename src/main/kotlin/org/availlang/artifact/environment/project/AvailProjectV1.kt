@@ -38,6 +38,8 @@ import org.availlang.artifact.AvailArtifactBuildPlan
 import org.availlang.artifact.environment.AvailEnvironment
 import org.availlang.artifact.environment.location.AvailLocation
 import org.availlang.artifact.environment.location.Scheme
+import org.availlang.artifact.environment.project.AvailProject.Companion.STYLE_FILE_NAME
+import org.availlang.artifact.environment.project.AvailProject.Companion.TEMPLATE_FILE_NAME
 import org.availlang.artifact.jar.AvailArtifactJar
 import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.json.JSONObject
@@ -65,8 +67,8 @@ class AvailProjectV1 constructor(
 ): AvailProject
 {
 	override val serializationVersion = AvailProjectV1.serializationVersion
-	override val moduleHeaders: MutableList<ModuleHeaderFileMetadata> =
-		mutableListOf()
+	override val moduleHeaders: MutableSet<ModuleHeaderFileMetadata> =
+		mutableSetOf()
 	override val manifestMap: MutableMap<String, AvailArtifactManifest> =
 		mutableMapOf()
 
@@ -140,10 +142,10 @@ class AvailProjectV1 constructor(
 			val localSettings = LocalSettings.from(File(projectConfigDir))
 			val styles = StylingGroup(
 				jsonObject(
-				File(projectConfigDir, AvailProjectRoot.STYLE_FILE_NAME).readText()))
+				File(projectConfigDir, STYLE_FILE_NAME).readText()))
 			val templateGroup = TemplateGroup(
 				jsonObject(
-				File(projectConfigDir, AvailProjectRoot.TEMPLATE_FILE_NAME).readText()))
+				File(projectConfigDir, TEMPLATE_FILE_NAME).readText()))
 			val project = AvailProjectV1(
 				name = name,
 				darkMode = darkMode,

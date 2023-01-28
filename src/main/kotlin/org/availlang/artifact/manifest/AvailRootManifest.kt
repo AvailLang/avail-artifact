@@ -95,7 +95,7 @@ data class AvailRootManifest constructor(
 					)?.strings?.toMutableList() ?: mutableListOf(),
 				templates = obj.getObjectOrNull(
 					AvailRootManifest::templates.name)?.let {
-						TemplateGroup(obj)
+						TemplateGroup(it)
 					} ?: TemplateGroup(),
 				styles = obj.getObjectOrNull(
 					AvailProjectRoot::styles.name

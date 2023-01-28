@@ -2,10 +2,10 @@
 
 package org.availlang.artifact.environment.project
 
-import org.availlang.artifact.AvailArtifact
 import org.availlang.artifact.environment.AvailEnvironment
 import org.availlang.artifact.environment.location.AvailLocation
-import org.availlang.artifact.jar.AvailArtifactJar
+import org.availlang.artifact.environment.project.AvailProject.Companion.STYLE_FILE_NAME
+import org.availlang.artifact.environment.project.AvailProject.Companion.TEMPLATE_FILE_NAME
 import org.availlang.artifact.manifest.AvailRootManifest
 import org.availlang.artifact.roots.AvailRoot
 import org.availlang.json.JSONFriendly
@@ -91,40 +91,10 @@ class AvailProjectRoot constructor(
 		}
 
 	/**
-	 * The map of [Palette] names to [Palette]s available for this root.
-	 */
-	@Suppress("unused")
-	val palettes get() = styles.palettes
-
-	/**
-	 * The default stylesheet for this root. Symbolic names are resolved against
-	 * the accompanying [Palette].
-	 */
-	@Suppress("unused")
-	val stylesheet: Map<String, StyleAttributes> get() = styles.stylesheet
-
-	/**
-	 * The templates that should be available when editing Avail source modules
-	 * in the workbench.
-	 */
-	@Suppress("unused")
-	val templates: MutableMap<String, TemplateExpansion> get() =
-		templateGroup.templates
-
-	/**
 	 * The list of [ModuleHeaderFileMetadata]s that can be used to prepend to
 	 * the start of new modules.
 	 */
-	val moduleHeaders: MutableList<ModuleHeaderFileMetadata> = mutableListOf()
-
-	/**
-	 * Specific for root imported from an [AvailArtifact] library, specifically
-	 * an [AvailArtifactJar].
-	 *
-	 * `true` indicates the templates will be not be overriden when loading root
-	 * from the artifact; `false` indicates they will.
-	 */
-	var lockTemplates: Boolean = false
+	val moduleHeaders: MutableSet<ModuleHeaderFileMetadata> = mutableSetOf()
 
 	/**
 	 * The Avail module descriptor path. It takes the form:
@@ -135,13 +105,54 @@ class AvailProjectRoot constructor(
 	val modulePath: String = "$name=${location.fullPath}"
 
 	/**
+	 * Refresh the [templateGroup] from disk.
+	 *
+	 * @param rootConfigDir
+	 *   The path to the root's configuration directory.
+	 */
+	@Suppress("unused")
+	fun refreshTemplates (rootConfigDir: String)
+	{
+		templateGroup = TemplateGroup(
+			jsonObject(
+				File(rootConfigDir, TEMPLATE_FILE_NAME).readText()))
+	}
+
+	/**
+	 * Refresh the [styles] from disk.
+	 *
+	 * @param rootConfigDir
+	 *   The path to the root's configuration directory.
+	 */
+	@Suppress("unused")
+	fun refreshStyles (rootConfigDir: String)
+	{
+		styles = StylingGroup(
+			jsonObject(
+				File(rootConfigDir, STYLE_FILE_NAME).readText()))
+	}
+
+	/**
+	 * Refresh the [localSettings] from disk.
+	 *
+	 * @param rootConfigDir
+	 *   The path to the root's configuration directory.
+	 */
+	@Suppress("unused")
+	fun refreshLocalSettings (rootConfigDir: String)
+	{
+		localSettings = LocalSettings.from(File(rootConfigDir))
+	}
+
+	/**
 	 * Write the [templateGroup] to its configuration file in
 	 * [rootConfigDirectory].
 	 */
 	@Suppress("unused")
 	fun saveTemplatesToDisk ()
 	{
-		templateGroup.saveToDisk(rootConfigDirectory)
+		templateGroup.saveToDisk(
+			"$rootConfigDirectory${File.separator}$TEMPLATE_FILE_NAME")
 	}
 
 	/**
@@ -161,7 +172,8 @@ class AvailProjectRoot constructor(
 	@Suppress("unused")
 	fun saveStylesToDisk ()
 	{
-		styles.saveToDisk(rootConfigDirectory)
+		styles.saveToDisk(
+			"$rootConfigDirectory${File.separator}$STYLE_FILE_NAME")
 	}
 
 	/**
@@ -216,7 +228,6 @@ class AvailProjectRoot constructor(
 					writeStrings(availModuleExtensions)
 				}
 			}
-			at(::lockTemplates.name) { write(lockTemplates) }
 			at(::moduleHeaders.name)
 			{
 				ModuleHeaderFileMetadata.writeTo(this, moduleHeaders)
@@ -228,18 +239,6 @@ class AvailProjectRoot constructor(
 
 	companion object
 	{
-		/**
-		 * The name of the [TemplateGroup] file in the root configuration
-		 * directory.
-		 */
-		const val TEMPLATE_FILE_NAME = "templates.json"
-
-		/**
-		 * The name of the [TemplateGroup] file in the root configuration
-		 * directory.
-		 */
-		const val STYLE_FILE_NAME = "styles.json"
-
 		/**
 		 * Extract and build an [AvailProjectRoot] from the provided
 		 * [JSONObject].
@@ -303,9 +302,6 @@ class AvailProjectRoot constructor(
 							configDir.absolutePath, it))
 				}
 				description = obj.getStringOrNull(::description.name) ?: ""
-				obj.getBooleanOrNull(::lockTemplates.name)?.let {
-					lockTemplates = it
-				}
 			}
 		}
 	}

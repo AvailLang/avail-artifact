@@ -90,12 +90,9 @@ sealed interface AvailArtifactManifest: JSONFriendly
 	{
 		val u = roots[root.name] ?: return
 		root.styles.updateFrom(u.styles)
-		if (!root.lockTemplates)
-		{
-			val merged = root.templateGroup.mergeOnto(u.templates)
-			root.templateGroup.templates.clear()
-			root.templateGroup.templates.putAll(merged.templates)
-		}
+		val merged = root.templateGroup.mergeOnto(u.templates)
+		root.templateGroup.templates.clear()
+		root.templateGroup.templates.putAll(merged.templates)
 	}
 
 	companion object

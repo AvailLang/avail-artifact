@@ -157,10 +157,10 @@ interface AvailProject: JSONFriendly
 	val disallow: MutableSet<String>
 
 	/**
-	 * The list of [ModuleHeaderFileMetadata]s that can be used to prepend to
+	 * The set of [ModuleHeaderFileMetadata]s that can be used to prepend to
 	 * the start of new modules.
 	 */
-	val moduleHeaders: MutableList<ModuleHeaderFileMetadata>
+	val moduleHeaders: MutableSet<ModuleHeaderFileMetadata>
 
 	/**
 	 * The list of [AvailArtifactBuildPlan]s used to build an [AvailArtifact]
@@ -203,14 +203,14 @@ interface AvailProject: JSONFriendly
 	/**
 	 * Remove the [AvailProjectRoot] from this [AvailProject].
 	 *
-	 * @param projectRoot
-	 *   The [AvailProjectRoot.id] to remove.
+	 * @param projectRootName
+	 *   The [AvailProjectRoot.name] to remove.
 	 * @return
 	 *   The `AvailProjectRoot` removed or `null` if not found.
 	 */
 	@Suppress("unused")
-	fun removeRoot (projectRoot: String): AvailProjectRoot? =
-		roots.remove(projectRoot)
+	fun removeRoot (projectRootName: String): AvailProjectRoot? =
+		roots.remove(projectRootName)
 
 	/**
 	 * The String file contents of this [AvailArtifactManifest].
@@ -222,6 +222,72 @@ interface AvailProject: JSONFriendly
 		}.toString()
 
 	/**
+	 * Refresh the [templateGroup] from disk.
+	 *
+	 * @param projectConfigDir
+	 *   The path to the project configuration directory.
+	 */
+	@Suppress("unused")
+	fun refreshTemplates (projectConfigDir: String)
+	{
+		templateGroup = TemplateGroup(
+			jsonObject(
+				File(projectConfigDir, TEMPLATE_FILE_NAME).readText()))
+	}
+
+	/**
+	 * Refresh the [styles] from disk.
+	 *
+	 * @param projectConfigDir
+	 *   The path to the project configuration directory.
+	 */
+	@Suppress("unused")
+	fun refreshStyles (projectConfigDir: String)
+	{
+		styles = StylingGroup(
+			jsonObject(
+				File(projectConfigDir, STYLE_FILE_NAME).readText()))
+	}
+
+	/**
+	 * Refresh the [localSettings] from disk.
+	 *
+	 * @param projectConfigDir
+	 *   The path to the project configuration directory.
+	 */
+	@Suppress("unused")
+	fun refreshLocalSettings (projectConfigDir: String)
+	{
+		localSettings = LocalSettings.from(File(projectConfigDir))
+	}
+
+	/**
+	 * Refresh the [artifactBuildPlans] from disk.
+	 *
+	 * @param projectFileName
+	 *   The name of the project.
+	 * @param projectPath
+	 *   The absolute path to the [AvailProject] directory.
+	 */
+	@Suppress("unused")
+	fun refreshArtifactBuildPlans (
+		projectFileName: String,
+		projectPath: String)
+	{
+		val copy = artifactBuildPlans.toMutableList()
+		artifactBuildPlans.clear()
+		try
+		{
+			artifactBuildPlans.addAll(
+				AvailArtifactBuildPlan.readPlans(projectFileName, projectPath))
+		}
+		catch (e: Throwable)
+		{
+			artifactBuildPlans.addAll(copy)
+		}
+	}
+
+	/**
 	 * Write the [templateGroup] to its configuration file in the project config
 	 * directory.
 	 *
@@ -231,7 +297,8 @@ interface AvailProject: JSONFriendly
 	@Suppress("unused")
 	fun saveTemplatesToDisk (projectConfigDir: String)
 	{
-		templateGroup.saveToDisk(projectConfigDir)
+		templateGroup.saveToDisk(
+			"$projectConfigDir${File.separator}$TEMPLATE_FILE_NAME")
 	}
 
 	/**
@@ -244,7 +311,8 @@ interface AvailProject: JSONFriendly
 	@Suppress("unused")
 	fun saveStylesToDisk (projectConfigDir: String)
 	{
-		styles.saveToDisk(projectConfigDir)
+		styles.saveToDisk(
+			"$projectConfigDir${File.separator}$STYLE_FILE_NAME")
 	}
 
 	/**
@@ -274,6 +342,19 @@ interface AvailProject: JSONFriendly
 		}
 	}
 
+	/**
+	 * Answer the [AvailProjectRoot] associated with the given root
+	 * configuration directory.
+	 *
+	 * @param path
+	 *   The path to the root's configuration directory.
+	 * @return
+	 *   The associated [AvailProjectRoot] or `null` if no match was found.
+	 */
+	@Suppress("unused")
+	fun rootFromConfigDirPath (path: String): AvailProjectRoot? =
+		roots[File(path).name]
+
 	companion object
 	{
 		/**
@@ -294,6 +375,18 @@ interface AvailProject: JSONFriendly
 		 */
 		@Suppress("unused")
 		const val ROOTS_DIR = "roots"
+
+		/**
+		 * The name of the [TemplateGroup] file in the root configuration
+		 * directory.
+		 */
+		const val TEMPLATE_FILE_NAME = "templates.json"
+
+		/**
+		 * The name of the [TemplateGroup] file in the root configuration
+		 * directory.
+		 */
+		const val STYLE_FILE_NAME = "styles.json"
 
 		/**
 		 * Extract and build a [AvailProject] from the provided [JSONObject].
@@ -368,13 +461,13 @@ interface AvailProject: JSONFriendly
 		): File =
 			File(configPath).apply {
 				if (!exists()) mkdirs()
-				File(this, AvailProjectRoot.TEMPLATE_FILE_NAME).let {
+				File(this, TEMPLATE_FILE_NAME).let {
 					if (!it.exists())
 					{
 						it.writeText(TemplateGroup().jsonFormattedString)
 					}
 				}
-				File(this, AvailProjectRoot.STYLE_FILE_NAME).let {
+				File(this, STYLE_FILE_NAME).let {
 					if (!it.exists())
 					{
 						it.writeText(StylingGroup().jsonPrettyPrintedFormattedString)

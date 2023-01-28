@@ -53,6 +53,8 @@ data class ModuleHeaderFileMetadata constructor(
 		}
 	}
 
+	override fun toString(): String = name
+
 	/**
 	 * Construct a [ModuleHeaderFileMetadata].
 	 *
@@ -97,7 +99,7 @@ data class ModuleHeaderFileMetadata constructor(
 		 * @param headers
 		 *   The [List] of [ModuleHeaderFileMetadata]s to write.
 		 */
-		fun writeTo(writer: JSONWriter, headers: List<ModuleHeaderFileMetadata>)
+		fun writeTo(writer: JSONWriter, headers: Set<ModuleHeaderFileMetadata>)
 		{
 			writer.writeArray {
 				headers.forEach { write(it) }

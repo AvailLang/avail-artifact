@@ -355,13 +355,27 @@ class StylingGroup constructor(): JSONFriendly
 	 */
 	@Suppress("unused")
 	fun selection (paletteName: String): StylingSelection =
-		StylingSelection(
-			palettes[paletteName] ?: palettes.values.first().let {
-				Palette(
-					it.lightColors.toMutableMap(),
-					it.darkColors.toMutableMap())
-			},
-			stylesheet.toMutableMap())
+		when
+		{
+			palettes.isEmpty() -> StylingSelection()
+			paletteName.isBlank() ->
+				StylingSelection(
+					palettes.values.first().let {
+						Palette(
+							it.lightColors.toMutableMap(),
+							it.darkColors.toMutableMap())
+					},
+					stylesheet.toMutableMap())
+
+			else ->
+				StylingSelection(
+					palettes[paletteName] ?: palettes.values.first().let {
+						Palette(
+							it.lightColors.toMutableMap(),
+							it.darkColors.toMutableMap())
+					},
+					stylesheet.toMutableMap())
+		}
 
 	override fun writeTo(writer: JSONWriter)
 	{
