@@ -9,6 +9,7 @@ import org.availlang.artifact.environment.location.Scheme
 import org.availlang.artifact.manifest.AvailArtifactManifest
 import org.availlang.artifact.manifest.AvailArtifactManifest.Companion.availArtifactManifestFile
 import org.availlang.artifact.manifest.AvailArtifactManifest.Companion.manifestFileName
+import org.availlang.artifact.manifest.AvailRootManifest
 import org.availlang.artifact.roots.AvailRoot
 import java.io.BufferedInputStream
 import java.io.DataInputStream
@@ -329,5 +330,87 @@ class AvailArtifactJarBuilder constructor(
 		jarOutputStream.finish()
 		jarOutputStream.flush()
 		jarOutputStream.close()
+	}
+
+	/**
+	 * Create an [AvailArtifactJar].
+	 *
+	 * @param version
+	 *   The version to give to the created artifact
+	 *   ([Attributes.Name.IMPLEMENTATION_VERSION]).
+	 * @param outputLocation
+	 *   The Jar file location where the jar file will be written.
+	 * @param artifactType
+	 *   The [AvailArtifactType] of the [AvailArtifact] to create.
+	 * @param jvmComponent
+	 *   The [JvmComponent] if any to be used.
+	 * @param implementationTitle
+	 *   The title of the artifact being created that will be added to the
+	 *   jar manifest ([Attributes.Name.IMPLEMENTATION_TITLE]).
+	 * @param artifactDescription
+	 *   The description of the [AvailArtifact] used in the
+	 *   [AvailArtifactManifest].
+	 * @param roots
+	 *   The list of [AvailRoot]s to add to the artifact jar.
+	 * @param includedFiles
+	 *   The list of [File] - target directory inside artifact for it to be
+	 *   placed [Pair]s.
+	 * @param jars
+	 *   The list of [JarFile]s to add to the artifact jar.
+	 * @param zipFiles
+	 *   The list of [ZipFile]s to add to the artifact jar.
+	 * @param directories
+	 *   The list of [File] directories whose contents should be added to
+	 *   the artifact jar.
+	 * @param customManifestItems
+	 *   A map of manifest attribute string name to the string value to add as
+	 *   additional fields to the manifest file of an Avail artifact.
+	 */
+	fun createAvailArtifactJar (
+		version: String,
+		outputLocation: String,
+		artifactType: AvailArtifactType,
+		jvmComponent: JvmComponent,
+		implementationTitle: String,
+		jarMainClass: String,
+		artifactDescription: String,
+		roots: List<AvailRoot>,
+		includedFiles: List<Pair<File, String>>,
+		jars: List<JarFile>,
+		zipFiles: List<ZipFile>,
+		directories: List<File>,
+		customManifestItems: Map<String, String>
+	): AvailArtifactJarBuilder
+	{
+		println("Creating $outputLocation…")
+		File(outputLocation).apply {
+			File(parent).mkdirs()
+			delete()
+		}
+		val manifestMap = mutableMapOf<String, AvailRootManifest>()
+		roots.forEach {
+			manifestMap[it.name] = it.manifest
+		}
+
+		val jarBuilder = AvailArtifactJarBuilder(
+			outputLocation,
+			version,
+			implementationTitle,
+			AvailArtifactManifest.manifestFile(
+				artifactType,
+				manifestMap,
+				artifactDescription,
+				jvmComponent),
+			jarMainClass,
+			customManifestItems)
+		roots.forEach {
+			println("Adding Root\n\t$it")
+			jarBuilder.addRoot(it)
+		}
+		includedFiles.forEach { jarBuilder.addFile(it.first, it.second) }
+		jars.forEach { jarBuilder.addJar(it) }
+		zipFiles.forEach { jarBuilder.addZip(it) }
+		directories.forEach { jarBuilder.addDir(it) }
+		return jarBuilder
 	}
 }

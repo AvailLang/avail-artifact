@@ -23,7 +23,8 @@ import org.availlang.json.JSONWriter
 class JvmComponent constructor(
 	val hasJVMComponents: Boolean,
 	val description: String = "",
-	val mains: Map<String, String> = mapOf()): JSONFriendly
+	val mains: Map<String, String> = mapOf()
+): JSONFriendly
 {
 	override fun writeTo(writer: JSONWriter)
 	{

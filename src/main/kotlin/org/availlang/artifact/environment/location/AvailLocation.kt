@@ -167,16 +167,16 @@ abstract class AvailLocation constructor(
 		},
 
 		/**
-		 * The path is relative to the [AvailEnvironment.availHomeWorkbench].
+		 * The path is relative to the [AvailEnvironment.availSdk].
 		 */
-		availHomeWorkbench
+		availSdks
 		{
 			override fun location(
 				pathRelativeSuffix: String,
 				path: String,
 				scheme: Scheme,
 				rootNameInJar: String?
-			): AvailLocation = AvailHomeWorkbench(path, scheme, rootNameInJar)
+			): AvailLocation = AvailSdks(path, scheme)
 		},
 
 		/** The path is relative to the project root directory. */

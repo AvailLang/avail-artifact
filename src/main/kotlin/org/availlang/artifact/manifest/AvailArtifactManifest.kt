@@ -2,6 +2,7 @@ package org.availlang.artifact.manifest
 
 import org.availlang.artifact.*
 import org.availlang.artifact.AvailArtifact.Companion.artifactRootDirectory
+import org.availlang.artifact.environment.project.AvailProjectRoot
 import org.availlang.artifact.jar.JvmComponent
 import org.availlang.json.JSONFriendly
 import org.availlang.json.JSONObject
@@ -75,6 +76,23 @@ sealed interface AvailArtifactManifest: JSONFriendly
 	fun writeFile (targetFile: File)
 	{
 		targetFile.writeText(fileContent)
+	}
+
+	/**
+	 * Update the project templates and stylesheets for the given
+	 * [AvailProjectRoot] from this [AvailArtifactManifest] if root present in
+	 * manifest.
+	 *
+	 * @param root
+	 *   The [AvailProjectRoot] to update.
+	 */
+	fun updateRoot (root: AvailProjectRoot)
+	{
+		val u = roots[root.name] ?: return
+		root.styles.updateFrom(u.styles)
+		val merged = root.templateGroup.mergeOnto(u.templates)
+		root.templateGroup.templates.clear()
+		root.templateGroup.templates.putAll(merged.templates)
 	}
 
 	companion object

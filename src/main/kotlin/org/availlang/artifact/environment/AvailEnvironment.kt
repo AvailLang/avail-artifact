@@ -1,5 +1,7 @@
 package org.availlang.artifact.environment
 
+import org.availlang.artifact.environment.project.AvailProject
+import org.availlang.artifact.environment.project.AvailProjectRoot
 import java.io.File
 import java.lang.System.getenv
 
@@ -36,12 +38,61 @@ object AvailEnvironment
 		"$availHome${File.separator}libraries"
 
 	/**
-	 * The workbench directory inside the [Avail home directory][availHome]
-	 * where files globally related to the Avail Workbench are stored.
+	 * The Avail SDK directory inside the [Avail home directory][availHome]
+	 * where the globally available Avail SDK is stored.
 	 */
 	@Suppress("MemberVisibilityCanBePrivate")
-	val availHomeWorkbench: String get() =
-		"$availHome${File.separator}workbench"
+	val availSdk: String get() = "$availHome${File.separator}sdk"
+
+	/**
+	 * The name of the top level configuration directory for an [AvailProject].
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	const val projectConfigDirectory = ".avail"
+
+	/**
+	 * Construct the absolute path of the [AvailProject] configuration files
+	 * directory. The project configuration directory name is the same name as
+	 * the project's associated config file without the `.json` extension.
+	 *
+	 * @param projectFileName
+	 *   The name of the project file.
+	 * @param projectPath
+	 *   The absolute path to the [AvailProject] directory.
+	 * @return
+	 *   The absolute path to the [AvailProject] configuration files directory.
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	fun projectConfigPath (
+		projectFileName: String,
+		projectPath: String
+	): String =
+		"$projectPath${File.separator}$projectConfigDirectory" +
+			"${File.separator}${projectFileName.removeSuffix(".json")}"
+
+	/**
+	 * Construct the absolute path of the [AvailProject] configuration files
+	 * directory for a particular [AvailProjectRoot] inside the
+	 * [project configuration directory][projectConfigPath]. The name of the
+	 * root's configuration is the same as the [AvailProjectRoot.name].
+	 *
+	 * @param projectFileName
+	 *   The name of the project file.
+	 * @param rootName
+	 *   The [AvailProjectRoot.name] of the root the config directory is for.
+	 * @param projectPath
+	 *   The absolute path to the [AvailProject] directory.
+	 * @return
+	 *   The absolute path to the [AvailProject] configuration files directory.
+	 */
+	@Suppress("MemberVisibilityCanBePrivate")
+	fun projectRootConfigPath (
+		projectFileName: String,
+		rootName: String,
+		projectPath: String
+	): String = "$projectPath${File.separator}$projectConfigDirectory" +
+		"${File.separator}${projectFileName.removeSuffix(".json")}" +
+		"${File.separator}$rootName"
 
 	/**
 	 * Add the
@@ -64,7 +115,7 @@ object AvailEnvironment
 		{
 			availLibs.mkdirs()
 		}
-		val availWb = File(availHomeWorkbench)
+		val availWb = File(availSdk)
 		if (!availWb.exists())
 		{
 			availWb.mkdirs()
