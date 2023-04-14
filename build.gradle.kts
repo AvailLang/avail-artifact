@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "org.availlang"
-version = "2.0.0.alpha19"
+version = "2.0.0.alpha20"  // For next publish.
 
 repositories {
     mavenLocal()
@@ -35,7 +35,7 @@ kotlin {
 }
 
 dependencies {
-    api("org.availlang:avail-json:2.1.1")
+    api("org.availlang:avail-json:2.1.2")
     testImplementation(kotlin("test"))
 }
 
@@ -156,8 +156,8 @@ publishing {
             println("Publishing snapshot: $isReleaseVersion")
             println("Publishing URL: $url")
             credentials {
-                username = System.getenv("OSSRH_USER")
-                password = System.getenv("OSSRH_PASSWORD")
+                username = ossrhUsername
+                password = ossrhPassword
             }
         }
     }
