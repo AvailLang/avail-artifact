@@ -4,11 +4,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toUpperCaseAsciiOnly
 
 plugins {
-    kotlin("jvm") version "1.7.21"
+    kotlin("jvm") version "1.9.0"
     `maven-publish`
     publishing
     signing
-    id("org.jetbrains.dokka") version "1.6.21"
+    id("org.jetbrains.dokka") version "1.8.20"
 }
 
 group = "org.availlang"
@@ -77,7 +77,7 @@ tasks {
         kotlinOptions {
             jvmTarget = targetJVM.toString()
             freeCompilerArgs = listOf("-Xjvm-default=all-compatibility")
-            languageVersion = "1.7"
+            languageVersion = "1.9"
         }
     }
     withType<Test> {
